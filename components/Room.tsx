@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-const URL = "http://localhost:3001";
+const URL = "https://poomegle.onrender.com";
 
 export const Room = ({
   name,
@@ -36,15 +36,19 @@ export const Room = ({
       const pc = new RTCPeerConnection();
 
       setSendingPc(pc);
+      // Create a stream to associate with tracks - this ensures event.streams is populated on receiver
+      const localStream = new MediaStream();
       if (localVideoTrack) {
-        console.log("added tack");
+        console.log("added track");
         console.log(localVideoTrack);
-        pc.addTrack(localVideoTrack);
+        localStream.addTrack(localVideoTrack);
+        pc.addTrack(localVideoTrack, localStream);
       }
       if (localAudioTrack) {
-        console.log("added tack");
+        console.log("added track");
         console.log(localAudioTrack);
-        pc.addTrack(localAudioTrack);
+        localStream.addTrack(localAudioTrack);
+        pc.addTrack(localAudioTrack, localStream);
       }
 
       pc.onicecandidate = async (e) => {
@@ -74,41 +78,54 @@ export const Room = ({
       console.log("received offer");
       setLobby(false);
       const pc = new RTCPeerConnection();
-      pc.setRemoteDescription(remoteSdp);
-      const sdp = await pc.createAnswer();
-      //@ts-ignore
-      pc.setLocalDescription(sdp);
+      
+      // Create stream for remote tracks
       const stream = new MediaStream();
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
       }
-
       setRemoteVideoStream(stream);
-      // trickle ice
       setReceivingPc(pc);
-      window.pcr = pc;
-      pc.ontrack = (e) => {
-        alert("ontrack");
-        // console.log("inside ontrack");
-        // const {track, type} = e;
-        // if (type == 'audio') {
-        //     // setRemoteAudioTrack(track);
-        //     // @ts-ignore
-        //     remoteVideoRef.current.srcObject.addTrack(track)
-        // } else {
-        //     // setRemoteVideoTrack(track);
-        //     // @ts-ignore
-        //     remoteVideoRef.current.srcObject.addTrack(track)
-        // }
-        // //@ts-ignore
-        // remoteVideoRef.current.play();
+
+      // IMPORTANT: Set up ontrack BEFORE setRemoteDescription
+      // ontrack can fire during setRemoteDescription!
+      pc.ontrack = (event) => {
+        console.log("ontrack fired:", event.track.kind);
+        
+        // Use the streams directly if available (recommended approach)
+        if (event.streams && event.streams[0]) {
+          if (remoteVideoRef.current) {
+            // Only set srcObject if it's not already set to this stream
+            // This prevents the "play() interrupted" error when multiple tracks arrive
+            if (remoteVideoRef.current.srcObject !== event.streams[0]) {
+              remoteVideoRef.current.srcObject = event.streams[0];
+            }
+            // autoPlay attribute handles playback, no manual play() needed
+          }
+        } else {
+          // Fallback: manually add track to existing stream
+          const track = event.track;
+          if (track.kind === "video") {
+            setRemoteVideoTrack(track);
+          } else {
+            setRemoteAudioTrack(track);
+          }
+          // Only add track if not already in stream
+          if (!stream.getTracks().includes(track)) {
+            stream.addTrack(track);
+          }
+          if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== stream) {
+            remoteVideoRef.current.srcObject = stream;
+          }
+          // autoPlay attribute handles playback, no manual play() needed
+        }
       };
 
       pc.onicecandidate = async (e) => {
         if (!e.candidate) {
           return;
         }
-        console.log("omn ice candidate on receiving seide");
+        console.log("on ice candidate on receiving side");
         if (e.candidate) {
           socket.emit("add-ice-candidate", {
             candidate: e.candidate,
@@ -118,38 +135,15 @@ export const Room = ({
         }
       };
 
+      // Now set remote description AFTER ontrack is set up
+      await pc.setRemoteDescription(remoteSdp);
+      const sdp = await pc.createAnswer();
+      await pc.setLocalDescription(sdp);
+
       socket.emit("answer", {
         roomId,
         sdp: sdp,
       });
-      setTimeout(() => {
-        const track1 = pc.getTransceivers()[0].receiver.track;
-        const track2 = pc.getTransceivers()[1].receiver.track;
-        console.log(track1);
-        if (track1.kind === "video") {
-          setRemoteAudioTrack(track2);
-          setRemoteVideoTrack(track1);
-        } else {
-          setRemoteAudioTrack(track1);
-          setRemoteVideoTrack(track2);
-        }
-        //@ts-ignore
-        remoteVideoRef.current.srcObject.addTrack(track1);
-        //@ts-ignore
-        remoteVideoRef.current.srcObject.addTrack(track2);
-        //@ts-ignore
-        remoteVideoRef.current.play();
-        // if (type == 'audio') {
-        //     // setRemoteAudioTrack(track);
-        //     // @ts-ignore
-        //     remoteVideoRef.current.srcObject.addTrack(track)
-        // } else {
-        //     // setRemoteVideoTrack(track);
-        //     // @ts-ignore
-        //     remoteVideoRef.current.srcObject.addTrack(track)
-        // }
-        // //@ts-ignore
-      }, 5000);
     });
 
     socket.on("answer", ({ roomId, sdp: remoteSdp }) => {
@@ -195,11 +189,9 @@ export const Room = ({
   }, [name]);
 
   useEffect(() => {
-    if (localVideoRef.current) {
-      if (localVideoTrack) {
-        localVideoRef.current.srcObject = new MediaStream([localVideoTrack]);
-        localVideoRef.current.play();
-      }
+    if (localVideoRef.current && localVideoTrack) {
+      localVideoRef.current.srcObject = new MediaStream([localVideoTrack]);
+      // autoPlay attribute handles playback, no manual play() needed
     }
   }, [localVideoRef]);
 
