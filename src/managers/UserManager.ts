@@ -8,7 +8,7 @@ export interface User {
 
 export class UserManager {
   private users: User[];
-  private queue: String[];
+  private queue: string[];
   private roomManager: RoomManager;
 
   constructor() {
@@ -17,7 +17,7 @@ export class UserManager {
     this.roomManager = new RoomManager();
   }
 
-  addUser(name: string, socket: Socket): void {
+  addUser(name: string, socket: Socket) {
     this.users.push({ name, socket });
     // socket id is unique
     this.queue.push(socket.id);
@@ -51,14 +51,17 @@ export class UserManager {
 
   initHandlers(socket: Socket) {
     socket.on("offer", ({ sdp, roomId }: { sdp: string; roomId: string }) => {
+      // console.log("Offer received for user:", socket.id);
       this.roomManager.onOffer(roomId, sdp, socket.id);
     });
 
     socket.on("answer", ({ sdp, roomId }: { sdp: string; roomId: string }) => {
+      // console.log("Answer received for user:", socket.id);
       this.roomManager.onAnswer(roomId, sdp, socket.id);
     });
 
     socket.on("add-ice-candidate", ({ candidate, roomId, type }) => {
+      // console.log("Ice candidate received for user:", socket.id);
       this.roomManager.onIceCandidates(roomId, socket.id, candidate, type);
     });
   }

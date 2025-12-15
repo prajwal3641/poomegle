@@ -4,7 +4,7 @@ export interface Room {
   user1: User;
   user2: User;
 }
-let ROOM_COUNT_GLOBAL = 0;
+let GLOBAL_ROOM_ID = 1;
 export class RoomManager {
   private rooms: Map<string, Room>;
   constructor() {
@@ -12,14 +12,21 @@ export class RoomManager {
   }
 
   createRoom(user1: User, user2: User) {
-    const roomID = ++ROOM_COUNT_GLOBAL;
-    this.rooms.set(roomID.toString(), { user1, user2 });
+    const roomId = this.generate().toString();
+    this.rooms.set(roomId.toString(), {
+      user1,
+      user2,
+    });
+
+    console.log(
+      `Room ${roomId} created between ${user1.name} and ${user2.name}`
+    );
 
     user1.socket.emit("send-offer", {
-      roomID,
+      roomId,
     });
     user2.socket.emit("send-offer", {
-      roomID,
+      roomId,
     });
   }
 
@@ -28,6 +35,7 @@ export class RoomManager {
     if (!room) return;
     const recievingUser =
       room.user1.socket.id === senderSocketId ? room.user2 : room.user1;
+    console.log("Sending offer to user:", recievingUser.socket.id);
     recievingUser?.socket.emit("offer", { sdp, roomId });
   }
 
@@ -38,7 +46,7 @@ export class RoomManager {
     }
     const receivingUser =
       room.user1.socket.id === senderSocketid ? room.user2 : room.user1;
-
+    console.log("Sending answer to user:", receivingUser.socket.id);
     receivingUser?.socket.emit("answer", {
       sdp,
       roomId,
@@ -57,6 +65,11 @@ export class RoomManager {
     }
     const receivingUser =
       room.user1.socket.id === senderSocketid ? room.user2 : room.user1;
+    console.log("Sending ICE candidate to user:", receivingUser.socket.id);
     receivingUser.socket.emit("add-ice-candidate", { candidate, type });
+  }
+
+  generate() {
+    return GLOBAL_ROOM_ID++;
   }
 }
