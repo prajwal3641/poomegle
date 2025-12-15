@@ -47,105 +47,115 @@ export const Room = ({
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   
-  // Use refs for PCs to avoid React state timing issues
-  const sendingPcRef = useRef<RTCPeerConnection | null>(null);
-  const receivingPcRef = useRef<RTCPeerConnection | null>(null);
+  // Single peer connection ref (one PC handles both sending and receiving)
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const roomIdRef = useRef<string | null>(null);
   
   // Queue for ICE candidates that arrive before remote description is set
-  const pendingCandidatesRef = useRef<{ pc: "sending" | "receiving"; candidate: RTCIceCandidate }[]>([]);
-  
-  // Track if remote description is set
-  const sendingPcRemoteDescSet = useRef(false);
-  const receivingPcRemoteDescSet = useRef(false);
+  const pendingCandidatesRef = useRef<RTCIceCandidate[]>([]);
+  const remoteDescSetRef = useRef(false);
 
   useEffect(() => {
     const socket = io(URL);
+    socketRef.current = socket;
     
-    // Helper to add ICE candidate with queuing
-    const addIceCandidate = async (
-      pc: RTCPeerConnection | null,
-      candidate: RTCIceCandidate,
-      pcType: "sending" | "receiving",
-      isRemoteDescSet: boolean
-    ) => {
-      if (!pc) {
-        console.log(`${pcType} PC not found, queuing candidate`);
-        pendingCandidatesRef.current.push({ pc: pcType, candidate });
-        return;
-      }
-      
-      if (!isRemoteDescSet) {
-        console.log(`Remote desc not set for ${pcType}, queuing candidate`);
-        pendingCandidatesRef.current.push({ pc: pcType, candidate });
-        return;
-      }
-      
-      try {
-        await pc.addIceCandidate(candidate);
-        console.log(`Added ICE candidate to ${pcType} PC`);
-      } catch (err) {
-        console.error(`Error adding ICE candidate to ${pcType}:`, err);
-      }
-    };
-    
-    // Helper to flush pending candidates
-    const flushPendingCandidates = async (pcType: "sending" | "receiving") => {
-      const pc = pcType === "sending" ? sendingPcRef.current : receivingPcRef.current;
-      if (!pc) return;
-      
-      const candidates = pendingCandidatesRef.current.filter(c => c.pc === pcType);
-      pendingCandidatesRef.current = pendingCandidatesRef.current.filter(c => c.pc !== pcType);
-      
-      console.log(`Flushing ${candidates.length} pending candidates for ${pcType}`);
-      
-      for (const { candidate } of candidates) {
-        try {
-          await pc.addIceCandidate(candidate);
-        } catch (err) {
-          console.error("Error flushing candidate:", err);
-        }
-      }
-    };
-
-    socket.on("send-offer", async ({ roomId }) => {
-      console.log("Sending offer for room:", roomId);
-      setLobby(false);
-      sendingPcRemoteDescSet.current = false;
-      
-      const pc = new RTCPeerConnection(ICE_SERVERS);
-      sendingPcRef.current = pc;
-      
-      // Monitor connection state
+    // Helper to set up common PC event handlers
+    const setupPeerConnection = (pc: RTCPeerConnection, role: string) => {
+      // Monitor connection states
       pc.oniceconnectionstatechange = () => {
-        console.log("Sender ICE connection state:", pc.iceConnectionState);
+        console.log(`[${role}] ICE connection state:`, pc.iceConnectionState);
         setConnectionState(pc.iceConnectionState);
+        
+        if (pc.iceConnectionState === "connected") {
+          setLobby(false);
+        }
       };
       
       pc.onconnectionstatechange = () => {
-        console.log("Sender connection state:", pc.connectionState);
+        console.log(`[${role}] Connection state:`, pc.connectionState);
+        if (pc.connectionState === "connected") {
+          setLobby(false);
+        }
       };
       
       pc.onicegatheringstatechange = () => {
-        console.log("Sender ICE gathering state:", pc.iceGatheringState);
+        console.log(`[${role}] ICE gathering state:`, pc.iceGatheringState);
       };
 
-      // Add tracks with stream
+      // Handle incoming tracks (BOTH sides need this!)
+      pc.ontrack = (event) => {
+        console.log(`[${role}] Received remote track:`, event.track.kind);
+        if (remoteVideoRef.current) {
+          if (event.streams && event.streams[0]) {
+            remoteVideoRef.current.srcObject = event.streams[0];
+            console.log(`[${role}] Set remote video stream from event.streams`);
+          } else {
+            // Fallback: create stream manually
+            let stream = remoteVideoRef.current.srcObject as MediaStream;
+            if (!stream) {
+              stream = new MediaStream();
+              remoteVideoRef.current.srcObject = stream;
+            }
+            if (!stream.getTracks().find(t => t.id === event.track.id)) {
+              stream.addTrack(event.track);
+              console.log(`[${role}] Added track to remote stream manually`);
+            }
+          }
+        }
+      };
+    };
+
+    // Helper to add local tracks to PC (BOTH sides need this!)
+    const addLocalTracks = (pc: RTCPeerConnection, role: string) => {
       const localStream = new MediaStream();
+      
       if (localVideoTrack) {
         localStream.addTrack(localVideoTrack);
         pc.addTrack(localVideoTrack, localStream);
-        console.log("Added video track to sender");
+        console.log(`[${role}] Added local video track`);
       }
       if (localAudioTrack) {
         localStream.addTrack(localAudioTrack);
         pc.addTrack(localAudioTrack, localStream);
-        console.log("Added audio track to sender");
+        console.log(`[${role}] Added local audio track`);
       }
+    };
+
+    // Helper to flush pending ICE candidates
+    const flushPendingCandidates = async (pc: RTCPeerConnection) => {
+      const candidates = [...pendingCandidatesRef.current];
+      pendingCandidatesRef.current = [];
+      
+      console.log(`Flushing ${candidates.length} pending ICE candidates`);
+      
+      for (const candidate of candidates) {
+        try {
+          await pc.addIceCandidate(candidate);
+          console.log("Flushed pending ICE candidate");
+        } catch (err) {
+          console.error("Error flushing ICE candidate:", err);
+        }
+      }
+    };
+
+    // User A: Creates offer and sends to User B
+    socket.on("send-offer", async ({ roomId }) => {
+      console.log("[CALLER] Received send-offer for room:", roomId);
+      roomIdRef.current = roomId;
+      remoteDescSetRef.current = false;
+      pendingCandidatesRef.current = [];
+      
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcRef.current = pc;
+      
+      setupPeerConnection(pc, "CALLER");
+      addLocalTracks(pc, "CALLER");
 
       // ICE candidate handler
       pc.onicecandidate = (e) => {
         if (e.candidate) {
-          console.log("Sender ICE candidate generated");
+          console.log("[CALLER] Generated ICE candidate");
           socket.emit("add-ice-candidate", {
             candidate: e.candidate,
             type: "sender",
@@ -154,69 +164,40 @@ export const Room = ({
         }
       };
 
-      // Create and send offer
+      // Create and send offer when negotiation needed
       pc.onnegotiationneeded = async () => {
         try {
-          console.log("Creating offer...");
+          console.log("[CALLER] Creating offer...");
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
-          console.log("Local description set, sending offer");
+          console.log("[CALLER] Sending offer");
           socket.emit("offer", { sdp: offer, roomId });
         } catch (err) {
-          console.error("Error creating offer:", err);
+          console.error("[CALLER] Error creating offer:", err);
         }
       };
     });
 
+    // User B: Receives offer, creates answer
     socket.on("offer", async ({ roomId, sdp: remoteSdp }) => {
-      console.log("Received offer for room:", roomId);
-      setLobby(false);
-      receivingPcRemoteDescSet.current = false;
+      console.log("[CALLEE] Received offer for room:", roomId);
+      roomIdRef.current = roomId;
+      remoteDescSetRef.current = false;
+      pendingCandidatesRef.current = [];
       
       const pc = new RTCPeerConnection(ICE_SERVERS);
-      receivingPcRef.current = pc;
+      pcRef.current = pc;
       
-      // Monitor connection state
-      pc.oniceconnectionstatechange = () => {
-        console.log("Receiver ICE connection state:", pc.iceConnectionState);
-        setConnectionState(pc.iceConnectionState);
-      };
+      setupPeerConnection(pc, "CALLEE");
       
-      pc.onconnectionstatechange = () => {
-        console.log("Receiver connection state:", pc.connectionState);
-      };
-      
-      pc.onicegatheringstatechange = () => {
-        console.log("Receiver ICE gathering state:", pc.iceGatheringState);
-      };
-
-      // Handle incoming tracks
-      pc.ontrack = (event) => {
-        console.log("Received track:", event.track.kind);
-        if (remoteVideoRef.current) {
-          if (event.streams && event.streams[0]) {
-            if (remoteVideoRef.current.srcObject !== event.streams[0]) {
-              remoteVideoRef.current.srcObject = event.streams[0];
-              console.log("Set remote video stream");
-            }
-          } else {
-            // Fallback: create stream manually
-            let stream = remoteVideoRef.current.srcObject as MediaStream;
-            if (!stream) {
-              stream = new MediaStream();
-              remoteVideoRef.current.srcObject = stream;
-            }
-            if (!stream.getTracks().includes(event.track)) {
-              stream.addTrack(event.track);
-            }
-          }
-        }
-      };
+      // IMPORTANT: Add local tracks BEFORE setting remote description
+      // This ensures tracks are included in the answer
+      addLocalTracks(pc, "CALLEE");
 
       // ICE candidate handler
       pc.onicecandidate = (e) => {
         if (e.candidate) {
-          console.log("Receiver ICE candidate generated");
+          console.log("[CALLEE] Generated ICE candidate");
           socket.emit("add-ice-candidate", {
             candidate: e.candidate,
             type: "receiver",
@@ -226,82 +207,87 @@ export const Room = ({
       };
 
       try {
-        // Set remote description
+        // Set remote description (the offer)
+        console.log("[CALLEE] Setting remote description (offer)");
         await pc.setRemoteDescription(new RTCSessionDescription(remoteSdp));
-        console.log("Receiver remote description set");
-        receivingPcRemoteDescSet.current = true;
+        remoteDescSetRef.current = true;
         
-        // Flush any pending candidates
-        await flushPendingCandidates("receiving");
+        // Flush any pending ICE candidates
+        await flushPendingCandidates(pc);
         
         // Create and send answer
+        console.log("[CALLEE] Creating answer...");
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        console.log("Receiver local description set, sending answer");
-        
+        console.log("[CALLEE] Sending answer");
         socket.emit("answer", { sdp: answer, roomId });
       } catch (err) {
-        console.error("Error handling offer:", err);
+        console.error("[CALLEE] Error handling offer:", err);
       }
     });
 
+    // User A: Receives answer from User B
     socket.on("answer", async ({ sdp: remoteSdp }) => {
-      console.log("Received answer");
-      const pc = sendingPcRef.current;
+      console.log("[CALLER] Received answer");
+      const pc = pcRef.current;
       
       if (!pc) {
-        console.error("Sending PC not found when receiving answer");
+        console.error("[CALLER] PC not found when receiving answer");
         return;
       }
       
       try {
+        console.log("[CALLER] Setting remote description (answer)");
         await pc.setRemoteDescription(new RTCSessionDescription(remoteSdp));
-        console.log("Sender remote description set");
-        sendingPcRemoteDescSet.current = true;
+        remoteDescSetRef.current = true;
         
-        // Flush any pending candidates
-        await flushPendingCandidates("sending");
-        setLobby(false);
+        // Flush any pending ICE candidates
+        await flushPendingCandidates(pc);
       } catch (err) {
-        console.error("Error setting remote description:", err);
+        console.error("[CALLER] Error setting remote description:", err);
       }
     });
 
     socket.on("lobby", () => {
+      console.log("Entered lobby");
       setLobby(true);
     });
 
+    // Handle incoming ICE candidates
     socket.on("add-ice-candidate", async ({ candidate, type }) => {
-      console.log("Received ICE candidate from remote, type:", type);
+      console.log(`Received ICE candidate from ${type}`);
+      const pc = pcRef.current;
       
-      if (type === "sender") {
-        // Candidate from sender goes to receiving PC
-        await addIceCandidate(
-          receivingPcRef.current,
-          new RTCIceCandidate(candidate),
-          "receiving",
-          receivingPcRemoteDescSet.current
-        );
-      } else {
-        // Candidate from receiver goes to sending PC
-        await addIceCandidate(
-          sendingPcRef.current,
-          new RTCIceCandidate(candidate),
-          "sending",
-          sendingPcRemoteDescSet.current
-        );
+      if (!pc) {
+        console.log("PC not ready, queuing ICE candidate");
+        pendingCandidatesRef.current.push(new RTCIceCandidate(candidate));
+        return;
+      }
+      
+      if (!remoteDescSetRef.current) {
+        console.log("Remote description not set, queuing ICE candidate");
+        pendingCandidatesRef.current.push(new RTCIceCandidate(candidate));
+        return;
+      }
+      
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("Added ICE candidate successfully");
+      } catch (err) {
+        console.error("Error adding ICE candidate:", err);
       }
     });
 
     // Cleanup
     return () => {
+      console.log("Cleaning up...");
       socket.disconnect();
-      sendingPcRef.current?.close();
-      receivingPcRef.current?.close();
+      pcRef.current?.close();
+      pcRef.current = null;
     };
   }, [name, localAudioTrack, localVideoTrack]);
 
-  // Set up local video
+  // Set up local video preview
   useEffect(() => {
     if (localVideoRef.current && localVideoTrack) {
       localVideoRef.current.srcObject = new MediaStream([localVideoTrack]);
@@ -345,7 +331,7 @@ export const Room = ({
         </div>
       </div>
       <p className="mt-6 text-base text-muted-foreground">
-        {lobby ? "Looking for someone..." : `Connected`}
+        {lobby ? "Looking for someone..." : `Connected (${connectionState})`}
       </p>
     </div>
   );
