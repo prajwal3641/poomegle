@@ -4,6 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 const URL = "https://poomegle.onrender.com";
 
+// ICE servers for NAT traversal - required for cross-network connections
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    { urls: "stun:stun.stunprotocol.org:3478" },
+    // Free TURN server (limited, for testing only)
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+  ],
+};
+
 export const Room = ({
   name,
   localAudioTrack,
@@ -33,7 +56,7 @@ export const Room = ({
     socket.on("send-offer", async ({ roomId }) => {
       console.log("sending offer");
       setLobby(false);
-      const pc = new RTCPeerConnection();
+      const pc = new RTCPeerConnection(ICE_SERVERS);
 
       setSendingPc(pc);
       // Create a stream to associate with tracks - this ensures event.streams is populated on receiver
@@ -77,7 +100,7 @@ export const Room = ({
     socket.on("offer", async ({ roomId, sdp: remoteSdp }) => {
       console.log("received offer");
       setLobby(false);
-      const pc = new RTCPeerConnection();
+      const pc = new RTCPeerConnection(ICE_SERVERS);
       
       // Create stream for remote tracks
       const stream = new MediaStream();
