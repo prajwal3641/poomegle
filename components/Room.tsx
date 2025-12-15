@@ -191,9 +191,20 @@ export const Room = ({ name, localAudioTrack, localVideoTrack }:{name:string, lo
     }, [localVideoRef])
 
     return (
-      <div>
-        hello {name}
-      </div>
+        <div className="flex flex-col items-center justify-center h-screen px-4">
+            <p className="text-lg font-medium mb-4">Hi {name}</p>
+            <div className="flex flex-col md:flex-row gap-4 w-full max-w-xs sm:max-w-sm md:max-w-3xl">
+                <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto">
+                    <video autoPlay ref={localVideoRef} className="w-full rounded-lg grayscale" />
+                </div>
+                <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto">
+                    <video autoPlay ref={remoteVideoRef} className="w-full rounded-lg grayscale" />
+                </div>
+            </div>
+            {lobby ? (
+                <p className="mt-4 text-muted-foreground">Waiting to connect you to someone...</p>
+            ) : null}
+        </div>
     )
   }
   
