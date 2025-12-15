@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-const URL = "http://localhost:3000";
+const URL = "http://localhost:3001";
 
 export const Room = ({
   name,
@@ -14,7 +14,7 @@ export const Room = ({
   localVideoTrack: MediaStreamTrack | null;
 }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [lobby, setLobby] = useState(false);
+  const [lobby, setLobby] = useState(true);
   const [sendingPc, setSendingPc] = useState<RTCPeerConnection | null>(null);
   const [receivingPc, setReceivingPc] = useState<RTCPeerConnection | null>(
     null
@@ -86,7 +86,7 @@ export const Room = ({
       setRemoteVideoStream(stream);
       // trickle ice
       setReceivingPc(pc);
-      (window as unknown as { pcr: RTCPeerConnection }).pcr = pc;
+      window.pcr = pc;
       pc.ontrack = (e) => {
         alert("ontrack");
         // console.log("inside ontrack");
