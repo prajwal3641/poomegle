@@ -3,18 +3,37 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-const URL = "https://poomegle.onrender.com";
-// const URL = "http://localhost:3001";
+// WebSocket URL from environment variable
+const URL = process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
 
-// STUN only (add TURN for best real-world reliability)
-const rtcConfig: RTCConfiguration = {
+// Fallback STUN-only config (used if TURN fetch fails)
+const fallbackRtcConfig: RTCConfiguration = {
   iceServers: [
+    { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:stun.cloudflare.com:53" },
     { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
   ],
 };
+
+// Fetch TURN credentials from our Next.js API route (FREE to generate!)
+async function getRtcConfig(): Promise<RTCConfiguration> {
+  try {
+    const res = await fetch("/api/turn");
+    if (!res.ok) {
+      console.error("Failed to get TURN servers:", res.status);
+      return fallbackRtcConfig;
+    }
+    const data = await res.json();
+    if (data.iceServers?.length > 0) {
+      console.log("Using TURN servers from Cloudflare");
+      return { iceServers: data.iceServers };
+    }
+    return fallbackRtcConfig;
+  } catch (err) {
+    console.error("Error fetching TURN servers:", err);
+    return fallbackRtcConfig;
+  }
+}
 
 type Role = "offerer" | "answerer";
 
@@ -42,6 +61,7 @@ export const Room = ({
   const pendingRemoteCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   const remoteStreamRef = useRef<MediaStream | null>(null);
+  const rtcConfigRef = useRef<RTCConfiguration | null>(null);
 
   function ensureRemoteStreamAttached() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
@@ -56,7 +76,9 @@ export const Room = ({
   function ensurePc(s: Socket) {
     if (pcRef.current) return pcRef.current;
 
-    const pc = new RTCPeerConnection(rtcConfig);
+    // Use fetched config (with TURN) or fallback to STUN-only
+    const config = rtcConfigRef.current || fallbackRtcConfig;
+    const pc = new RTCPeerConnection(config);
 
     // Prepare remote stream + ontrack (fires when remote adds tracks). [web:33]
     ensureRemoteStreamAttached();
@@ -86,7 +108,7 @@ export const Room = ({
       });
     };
 
-    // Optional but useful debug
+    // Log ICE state changes (TURN is already configured upfront)
     pc.oniceconnectionstatechange = () => {
       console.log("iceConnectionState:", pc.iceConnectionState);
     };
@@ -128,6 +150,13 @@ export const Room = ({
       localVideoRef.current.srcObject = new MediaStream([localVideoTrack]);
     }
   }, [localVideoTrack]);
+
+  // Fetch TURN credentials upfront (before socket connection)
+  useEffect(() => {
+    getRtcConfig().then((config) => {
+      rtcConfigRef.current = config;
+    });
+  }, []);
 
   // Socket + signaling
   useEffect(() => {
@@ -229,10 +258,12 @@ export const Room = ({
       pendingRemoteCandidatesRef.current = [];
       roomIdRef.current = null;
       remoteStreamRef.current = null;
+      rtcConfigRef.current = null;
 
       if (pcRef.current) {
         pcRef.current.ontrack = null;
         pcRef.current.onicecandidate = null;
+        pcRef.current.oniceconnectionstatechange = null;
         pcRef.current.close();
         pcRef.current = null;
       }
