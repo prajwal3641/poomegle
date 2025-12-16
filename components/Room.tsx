@@ -88,7 +88,7 @@ export const Room = ({
       console.log("received offer");
       setLobby(false);
       const pc = new RTCPeerConnection(iceServers);
-      
+
       // Create stream for remote tracks
       const stream = new MediaStream();
       if (remoteVideoRef.current) {
@@ -101,7 +101,7 @@ export const Room = ({
       // ontrack can fire during setRemoteDescription!
       pc.ontrack = (event) => {
         console.log("ontrack fired:", event.track.kind);
-        
+
         // Use the streams directly if available (recommended approach)
         if (event.streams && event.streams[0]) {
           if (remoteVideoRef.current) {
@@ -124,7 +124,10 @@ export const Room = ({
           if (!stream.getTracks().includes(track)) {
             stream.addTrack(track);
           }
-          if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== stream) {
+          if (
+            remoteVideoRef.current &&
+            remoteVideoRef.current.srcObject !== stream
+          ) {
             remoteVideoRef.current.srcObject = stream;
           }
           // autoPlay attribute handles playback, no manual play() needed
