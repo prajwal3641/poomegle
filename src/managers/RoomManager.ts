@@ -22,12 +22,8 @@ export class RoomManager {
       `Room ${roomId} created between ${user1.name} and ${user2.name}`
     );
 
-    user1.socket.emit("send-offer", {
-      roomId,
-    });
-    user2.socket.emit("send-offer", {
-      roomId,
-    });
+    user1.socket.emit("send-offer", { roomId, role: "offerer" });
+    user2.socket.emit("wait-offer", { roomId, role: "answerer" });
   }
 
   onOffer(roomId: string, sdp: string, senderSocketId: string) {
