@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-// const URL = "https://poomegle.onrender.com";
-const URL = "http://localhost:3001";
+const URL = "https://poomegle.onrender.com";
+// const URL = "http://localhost:3001";
 
 // STUN only (add TURN for best real-world reliability)
 const rtcConfig: RTCConfiguration = {
