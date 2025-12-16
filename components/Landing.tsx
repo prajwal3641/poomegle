@@ -43,8 +43,7 @@ export const Landing = () => {
     if (!joined) {
         return (
             <div className="flex flex-col items-center justify-center h-screen px-4">
-                <h1 className="text-2xl font-semibold mb-6">poomegle</h1>
-                <p className="text-base text-muted-foreground mb-6">Talk to strangers</p>
+
                 
                 <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
                     <div className="relative rounded-lg overflow-hidden bg-muted">
@@ -63,10 +62,9 @@ export const Landing = () => {
                             muted
                             playsInline
                             ref={videoRef} 
-                            className="w-full aspect-video object-cover"
+                            className="w-full aspect-video object-cover grayscale"
                         />
                     </div>
-                    <p className="text-base text-muted-foreground text-center mt-2">You</p>
                 </div>
                 
                 <div className="flex items-center justify-center w-full max-w-xs sm:max-w-sm md:max-w-md mt-6 gap-2">
@@ -86,8 +84,6 @@ export const Landing = () => {
                         Join
                     </Button>
                 </div>
-                
-                <p className="text-base text-muted-foreground mt-6">Be respectful</p>
             </div>
         )
     }
