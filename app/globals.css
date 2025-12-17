@@ -22,6 +22,24 @@
 
   /* Animation */
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  @keyframes rubberBand {
+    0% { transform: scale(1); }
+    30% { transform: scaleX(1.25) scaleY(0.75); }
+    40% { transform: scaleX(0.75) scaleY(1.25); }
+    50% { transform: scaleX(1.15) scaleY(0.85); }
+    65% { transform: scaleX(.95) scaleY(1.05); }
+    75% { transform: scaleX(1.05) scaleY(.95); }
+    100% { transform: scale(1); }
+  }
+  --animate-rubber: rubberBand 1s ease-in-out;
+
+  /* CRT Animation */
+  @keyframes crt-static {
+    0% { background-position: 0 0; }
+    100% { background-position: 100% 100%; }
+  }
+  --animate-crt: crt-static 0.2s steps(8) infinite;
 
   /* Shadcn Mappings to New Colors or Standard */
   --color-background: var(--color-light-bg);
@@ -74,4 +92,18 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* CRT Static Effect */
+.crt-overlay {
+  background-image: repeating-linear-gradient(transparent, transparent 2px, rgba(0, 0, 0, 0.1) 2px, rgba(0, 0, 0, 0.1) 4px);
+  background-size: 100% 4px;
+}
+
+.crt-noise {
+  /* Increased baseFrequency for bigger grains (actually lower number = bigger features, but for noise filter typically 0.5-0.8 is good for static. 
+     I will use 0.65 and remove opacity from SVG to control via CSS) */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 150px 150px;
+  filter: contrast(150%) grayscale(100%);
 }

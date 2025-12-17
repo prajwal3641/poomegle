@@ -72,13 +72,36 @@ export const Room = ({
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const rtcConfigRef = useRef<RTCConfiguration | null>(null);
 
-  // -- UI State --
+  // -- Chat State --
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chatReady, setChatReady] = useState(false);
+
 
   // --- WebRTC Logic Implementation ---
+
+  function bindDataChannel(dc: RTCDataChannel) {
+    dataChannelRef.current = dc;
+
+    dc.onopen = () => setChatReady(true);
+    dc.onclose = () => setChatReady(false);
+
+    dc.onmessage = (ev) => {
+      const text = String(ev.data);
+      setMessages((prev) => [
+        ...prev,
+        { 
+          id: Date.now().toString() + Math.random().toString(), 
+          text: text, 
+          sender: 'stranger', 
+          timestamp: Date.now() 
+        },
+      ]);
+    };
+  }
 
   function ensureRemoteStreamAttached() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
@@ -90,11 +113,21 @@ export const Room = ({
     }
   }
 
-  function ensurePc(s: Socket) {
+  function ensurePc(s: Socket, currentRole?: Role) {
     if (pcRef.current) return pcRef.current;
 
     const config = rtcConfigRef.current || fallbackRtcConfig;
     const pc = new RTCPeerConnection(config);
+
+    pc.ondatachannel = (ev) => {
+      bindDataChannel(ev.channel);
+    };
+
+    const r = currentRole || role;
+    if (r === "offerer" && !dataChannelRef.current) {
+        const dc = pc.createDataChannel("chat", { ordered: true });
+        bindDataChannel(dc);
+    }
 
     ensureRemoteStreamAttached();
     pc.ontrack = ({ streams, track }) => {
@@ -170,15 +203,21 @@ export const Room = ({
       setLobby(true);
       setRole(null);
       roomIdRef.current = null;
-      // Clear chat when entering lobby/waiting
       setMessages([]); 
+      setChatReady(false);
+      
+      if (dataChannelRef.current) {
+        dataChannelRef.current.close();
+        dataChannelRef.current = null;
+      }
     });
 
     s.on("send-offer", async ({ roomId, role }: { roomId: string; role?: Role }) => {
       setLobby(false);
-      setRole(role ?? "offerer");
+      const r = role ?? "offerer";
+      setRole(r);
       roomIdRef.current = roomId;
-      const pc = ensurePc(s);
+      const pc = ensurePc(s, r);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       s.emit("offer", { sdp: pc.localDescription, roomId });
@@ -186,15 +225,16 @@ export const Room = ({
 
     s.on("wait-offer", ({ roomId, role }: { roomId: string; role?: Role }) => {
       setLobby(false);
-      setRole(role ?? "answerer");
+      const r = role ?? "answerer";
+      setRole(r);
       roomIdRef.current = roomId;
-      ensurePc(s);
+      ensurePc(s, r);
     });
 
     s.on("offer", async ({ roomId, sdp }: { roomId: string; sdp: RTCSessionDescriptionInit }) => {
         setLobby(false);
         roomIdRef.current = roomId;
-        const pc = ensurePc(s);
+        const pc = ensurePc(s, "answerer");
         await pc.setRemoteDescription(sdp);
         await flushPendingCandidates(pc);
         const answer = await pc.createAnswer();
@@ -230,10 +270,17 @@ export const Room = ({
       roomIdRef.current = null;
       remoteStreamRef.current = null;
       rtcConfigRef.current = null;
+      
+      if (dataChannelRef.current) {
+          dataChannelRef.current.close();
+          dataChannelRef.current = null;
+      }
+
       if (pcRef.current) {
         pcRef.current.ontrack = null;
         pcRef.current.onicecandidate = null;
         pcRef.current.oniceconnectionstatechange = null;
+        pcRef.current.ondatachannel = null;
         pcRef.current.close();
         pcRef.current = null;
       }
@@ -251,7 +298,6 @@ export const Room = ({
     scrollToBottom();
   }, [messages]);
 
-  // If a new message arrives from stranger, open chat
   useEffect(() => {
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
@@ -263,17 +309,23 @@ export const Room = ({
 
   const handleSend = () => {
     if (!inputText.trim()) return;
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: 'me',
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    setInputText('');
     
-    // Note: Chat backend logic is not implemented in original code.
-    // We could emit a socket event here if the backend supports it.
+    const dc = dataChannelRef.current;
+    
+    if (dc && dc.readyState === "open") {
+        dc.send(inputText);
+        
+        const newMessage: Message = {
+            id: Date.now().toString(),
+            text: inputText,
+            sender: 'me',
+            timestamp: Date.now(),
+        };
+        setMessages((prev) => [...prev, newMessage]);
+        setInputText('');
+    } else {
+        console.warn("Chat not ready");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -282,13 +334,10 @@ export const Room = ({
   };
 
   const handleSkip = () => {
-    // Basic skip implementation: reload to find new peer
-    // In a full implementation, we would emit 'leave' and 'join' events
     window.location.reload(); 
   };
 
   const handleQuit = () => {
-      // Disconnect and go back home
       window.location.href = '/'; 
   };
 
@@ -296,15 +345,21 @@ export const Room = ({
     <div className="h-screen w-full flex flex-col overflow-hidden bg-light-bg dark:bg-dark-bg font-mono text-gray-900 dark:text-gray-100">
       <Navbar />
 
-      <main className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-24 md:pb-32 px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-28 relative z-10 transition-all duration-300`}>
+      <main className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-6 md:pb-6 px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-24 relative z-10 transition-all duration-300`}>
         
         {/* Left Column: Video Feeds */}
-        <div className={`flex flex-row gap-3 md:gap-4 shrink-0 h-[25vh] md:h-[30vh] lg:h-full min-h-0 transition-all duration-300 ${isChatOpen ? 'lg:col-span-5 lg:flex-col' : 'lg:col-span-12 lg:flex-col justify-center'}`}>
+        <div className={`
+            gap-3 md:gap-4 shrink-0 
+            transition-all duration-300 
+            ${isChatOpen 
+                ? 'flex flex-row lg:flex-col lg:col-span-5 h-[25vh] md:h-[30vh] lg:h-full' // Mobile: Horizontal when chat open
+                : 'flex flex-col lg:col-span-12 flex-1 lg:grid lg:grid-cols-2 lg:gap-8 justify-center items-center h-auto' // Mobile: Vertical when chat closed
+            }
+        `}>
           
           {/* Stranger Feed */}
-          <div className="relative flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 flex flex-col items-center justify-center overflow-hidden group shadow-lg">
+          <div className="relative flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 flex flex-col items-center justify-center overflow-hidden group shadow-lg w-full h-full">
             
-            {/* Remote Video Element */}
             <video
                 autoPlay
                 playsInline
@@ -314,11 +369,19 @@ export const Room = ({
             
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-100/50 dark:from-white/5 to-transparent opacity-50 pointer-events-none"></div>
             
-            {/* Loading/Lobby Indicator */}
             {lobby && (
-                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 z-10 p-4 text-center">
-                     <UserX size={48} className="mb-2 opacity-50" />
-                     <p className="animate-pulse">Waiting for a stranger...</p>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10 overflow-hidden">
+                     {/* CRT Static Effect */}
+                     <div className="absolute inset-0 z-20 pointer-events-none">
+                        {/* More visible, stronger opacity, no mix-blend-overlay for true black/white */}
+                        <div className="absolute inset-0 crt-noise animate-crt opacity-60"></div>
+                        <div className="absolute inset-0 crt-overlay opacity-50"></div>
+                     </div>
+                     
+                     <div className="relative z-30 flex flex-col items-center justify-center p-4 text-center">
+                        <UserX size={48} className="mb-2 opacity-50 text-white/50" />
+                        <p className="animate-pulse text-white/70 font-mono tracking-widest text-sm md:text-base">SEARCHING FREQUENCY...</p>
+                     </div>
                  </div>
             )}
             
@@ -332,9 +395,8 @@ export const Room = ({
           </div>
 
           {/* Self Feed */}
-          <div className="relative flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 flex flex-col items-center justify-center overflow-hidden group shadow-lg">
+          <div className="relative flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 flex flex-col items-center justify-center overflow-hidden group shadow-lg w-full h-full">
              
-            {/* Local Video Element */}
             <video
                 autoPlay
                 playsInline
@@ -356,40 +418,31 @@ export const Room = ({
         </div>
 
         {/* Right Column: Chat */}
-        {isChatOpen && (
-        <div className="lg:col-span-7 flex flex-col gap-3 md:gap-4 flex-1 lg:h-full min-h-0 relative">
+        <div className={`lg:col-span-7 flex flex-col gap-3 md:gap-4 flex-1 lg:h-full min-h-0 relative transition-all duration-300 ${!isChatOpen ? 'hidden lg:flex' : 'flex'}`}>
           
           {/* Chat History Area */}
           <div className="flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 p-4 md:p-6 relative flex flex-col overflow-hidden shadow-lg">
              
-            {/* Close Chat Button */}
+            {/* Close Chat Button - Hidden on Desktop */}
             <button 
                 onClick={() => setIsChatOpen(false)}
-                className="absolute top-3 right-3 p-2 bg-gray-100 dark:bg-dark-highlight rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-20"
+                className="absolute top-3 right-3 p-2 bg-gray-100 dark:bg-dark-highlight rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-20 lg:hidden"
                 title="Close chat"
             >
                 <X size={18} className="text-gray-500 dark:text-gray-400" />
             </button>
 
-            {/* Grid Pattern Background */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" 
-                 style={{ 
-                   backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)', 
-                   backgroundSize: '40px 40px' 
-                 }}>
-            </div>
-
-            <div className="flex-1 overflow-y-auto custom-scroll flex flex-col space-y-4 pr-2 z-10 pt-6">
+            <div className="flex-1 overflow-y-auto custom-scroll flex flex-col space-y-3 pr-2 z-10 pt-4">
               {messages.length === 0 && (
-                <div className="flex-1 flex items-end justify-center pb-10 text-gray-400 dark:text-gray-600 opacity-50 font-bold text-lg italic select-none">
-                  Start chatting...
+                <div className="flex-1 flex items-end justify-center pb-10 text-gray-400 dark:text-gray-600 opacity-50 font-bold text-base md:text-lg italic select-none">
+                  {chatReady ? "Start chatting..." : "Connecting to chat..."}
                 </div>
               )}
               
               {messages.map((msg) => (
                 <div 
                   key={msg.id} 
-                  className={`max-w-[85%] md:max-w-[80%] px-4 py-2.5 md:px-5 md:py-3 rounded-2xl text-sm md:text-lg break-words shadow-sm ${
+                  className={`max-w-[85%] md:max-w-[80%] px-3 py-2 md:px-4 md:py-2.5 rounded-2xl text-sm md:text-base break-words shadow-sm ${
                     msg.sender === 'me' 
                       ? 'self-end bg-primary text-gray-900 rounded-br-none' 
                       : 'self-start bg-gray-100 dark:bg-dark-highlight text-gray-800 dark:text-gray-200 rounded-bl-none'
@@ -403,40 +456,41 @@ export const Room = ({
           </div>
 
           {/* Input Area */}
-          <div className="h-14 md:h-16 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1.5 md:px-2 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
+          <div className="h-12 md:h-16 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1.5 md:px-2 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
             <input 
-              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white text-sm md:text-lg px-4 md:px-6 placeholder-gray-400 dark:placeholder-gray-600 font-mono h-full outline-none" 
-              placeholder="type a msg .." 
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white text-sm md:text-lg px-4 md:px-6 placeholder-gray-400 dark:placeholder-gray-600 font-mono h-full outline-none disabled:opacity-50" 
+              placeholder={chatReady ? "type a msg .." : "Connecting..."}
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={!chatReady}
             />
             <button 
               onClick={handleSend}
-              className="mr-0.5 md:mr-1 bg-primary text-gray-900 font-bold text-sm md:text-base hover:bg-white hover:scale-105 active:scale-95 px-5 py-2 md:px-6 md:py-2.5 rounded-full transition-all duration-200 shadow-md cursor-pointer"
+              disabled={!chatReady}
+              className="mr-0.5 md:mr-1 bg-primary text-gray-900 font-bold text-xs md:text-sm hover:bg-white hover:scale-105 active:scale-95 px-4 py-2 md:px-6 md:py-2.5 rounded-full transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
             >
               send
             </button>
           </div>
         </div>
-        )}
 
       </main>
 
-      {/* Floating Open Chat Button (only when chat is closed) */}
+      {/* Floating Open Chat Button (only when chat is closed) - Hidden on Desktop */}
       {!isChatOpen && (
           <button 
             onClick={() => setIsChatOpen(true)}
-            className="fixed bottom-24 right-6 md:bottom-28 md:right-8 w-14 h-14 bg-primary text-gray-900 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 border-2 border-gray-900"
+            className="fixed bottom-20 right-6 md:bottom-28 md:right-8 w-12 h-12 md:w-14 md:h-14 bg-primary text-gray-900 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 border-2 border-gray-900 lg:hidden"
             title="Open chat"
           >
-              <MessageSquare size={24} className="ml-0.5 mt-0.5" strokeWidth={2.5} />
+              <MessageSquare size={20} className="ml-0.5 mt-0.5 md:w-6 md:h-6" strokeWidth={2.5} />
           </button>
       )}
 
-      <div className="fixed bottom-3 right-6 text-[10px] md:text-xs text-gray-400 dark:text-gray-500 opacity-60 pointer-events-none hidden md:block select-none z-0">
-        press <span className="border border-gray-400 dark:border-gray-600 px-1.5 py-0.5 rounded mx-1">esc</span> to skip
+      <div className="fixed bottom-2 right-4 text-[10px] text-gray-400 dark:text-gray-600 opacity-40 pointer-events-none hidden lg:block select-none z-0">
+        esc to skip
       </div>
     </div>
   );

@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Gochi_Hand, Space_Mono } from "next/font/google";
 import "./globals.css";
-// DarkModeToggle is now integrated into the pages or components, but the layout wraps everything.
-// The new design has ThemeToggle inside the pages, but maybe we should keep it global if it's in App.tsx in the source.
-// Source App.tsx has ThemeToggle outside Routes. So I should keep it here.
-import { ThemeToggle } from "../components/ThemeToggle";
+// DarkModeToggle is now integrated into the Navbar, so we don't need it globally floating anymore.
+// We remove the import and usage here.
 
 const gochiHand = Gochi_Hand({
   variable: "--font-gochi-hand",
@@ -33,7 +31,6 @@ export default function RootLayout({
       <body
         className={`${gochiHand.variable} ${spaceMono.variable} antialiased bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 font-mono overflow-hidden`}
       >
-        <ThemeToggle />
         {children}
       </body>
     </html>
