@@ -63,6 +63,14 @@ export const Room = ({
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const rtcConfigRef = useRef<RTCConfiguration | null>(null);
 
+  // chat states
+  type ChatMsg = { from: "me" | "peer"; text: string; ts: number };
+
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const [chatReady, setChatReady] = useState(false);
+  const [chatText, setChatText] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
+
   function ensureRemoteStreamAttached() {
     if (!remoteStreamRef.current) remoteStreamRef.current = new MediaStream();
     if (
@@ -73,12 +81,38 @@ export const Room = ({
     }
   }
 
-  function ensurePc(s: Socket) {
+  function bindDataChannel(dc: RTCDataChannel) {
+    dataChannelRef.current = dc;
+
+    dc.onopen = () => setChatReady(true);
+    dc.onclose = () => setChatReady(false);
+
+    dc.onmessage = (ev) => {
+      setChatMessages((m) => [
+        ...m,
+        { from: "peer", text: String(ev.data), ts: Date.now() },
+      ]);
+    };
+  }
+
+  function ensurePc(s: Socket, r?: Role) {
     if (pcRef.current) return pcRef.current;
 
     // Use fetched config (with TURN) or fallback to STUN-only
     const config = rtcConfigRef.current || fallbackRtcConfig;
     const pc = new RTCPeerConnection(config);
+
+    // >>> ADDED: Answerer receives channel created by offerer via ondatachannel
+    pc.ondatachannel = (ev) => {
+      bindDataChannel(ev.channel);
+    };
+
+    // >>> ADDED: Offerer creates chat channel BEFORE createOffer() so SDP includes it
+    if ((r ?? role) === "offerer" && !dataChannelRef.current) {
+      const dc = pc.createDataChannel("chat", { ordered: true });
+      bindDataChannel(dc);
+    }
+    // <<< ADDED
 
     // Prepare remote stream + ontrack (fires when remote adds tracks). [web:33]
     ensureRemoteStreamAttached();
@@ -144,6 +178,19 @@ export const Room = ({
     }
   }
 
+  // >>> ADDED: P2P send chat via RTCDataChannel.send()
+  function sendChat() {
+    const dc = dataChannelRef.current;
+    const msg = chatText.trim();
+
+    if (!dc || dc.readyState !== "open" || !msg) return;
+
+    dc.send(msg);
+    setChatMessages((m) => [...m, { from: "me", text: msg, ts: Date.now() }]);
+    setChatText("");
+  }
+  // <<< ADDED
+
   // Local preview
   useEffect(() => {
     if (localVideoRef.current && localVideoTrack) {
@@ -174,10 +221,11 @@ export const Room = ({
       "send-offer",
       async ({ roomId, role }: { roomId: string; role?: Role }) => {
         setLobby(false);
-        setRole(role ?? "offerer");
+        const r = role ?? "offerer";
+        setRole(r);
         roomIdRef.current = roomId;
 
-        const pc = ensurePc(s);
+        const pc = ensurePc(s, r);
 
         // Create and send offer (setLocalDescription triggers ICE gathering). [web:8]
         const offer = await pc.createOffer();
@@ -189,11 +237,12 @@ export const Room = ({
     // Answerer waits for offer; this event is from the modified backend.
     s.on("wait-offer", ({ roomId, role }: { roomId: string; role?: Role }) => {
       setLobby(false);
-      setRole(role ?? "answerer");
+      const r = role ?? "answerer";
+      setRole(r);
       roomIdRef.current = roomId;
 
       // Create PC and attach tracks, but do not create offer.
-      ensurePc(s);
+      ensurePc(s, r);
     });
 
     // Answerer receives offer -> SRD -> createAnswer -> SLD -> send answer. [web:8]
@@ -255,6 +304,19 @@ export const Room = ({
       s.disconnect();
       setSocket(null);
 
+      // >>> ADDED: cleanup datachannel + chat state
+      if (dataChannelRef.current) {
+        dataChannelRef.current.onopen = null;
+        dataChannelRef.current.onmessage = null;
+        dataChannelRef.current.onclose = null;
+        dataChannelRef.current.close();
+        dataChannelRef.current = null;
+      }
+      setChatReady(false);
+      setChatMessages([]);
+      setChatText("");
+      // <<< ADDED
+
       pendingRemoteCandidatesRef.current = [];
       roomIdRef.current = null;
       remoteStreamRef.current = null;
@@ -302,6 +364,45 @@ export const Room = ({
           Waiting to connect you to someone...
         </p>
       ) : null}
+
+      {/* >>> ADDED: Chat UI (P2P over DataChannel) */}
+      {!lobby ? (
+        <div className="w-full max-w-3xl mt-6">
+          <div className="h-40 overflow-y-auto border rounded p-3">
+            {chatMessages.map((m, i) => (
+              <div key={i}>
+                <span className="text-sm font-medium">{m.from}:</span> {m.text}
+              </div>
+            ))}
+          </div>
+
+          <form
+            className="flex gap-2 mt-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendChat();
+            }}
+          >
+            <input
+              value={chatText}
+              onChange={(e) => setChatText(e.target.value)}
+              className="flex-1 border rounded px-3 py-2"
+              placeholder={
+                chatReady ? "Type a message..." : "Chat connecting..."
+              }
+              disabled={!chatReady}
+            />
+            <button
+              className="border rounded px-4"
+              type="submit"
+              disabled={!chatReady}
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      ) : null}
+      {/* <<< ADDED */}
     </div>
   );
 };
