@@ -182,6 +182,87 @@ export const Room = ({
     }
   }
 
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    const dc = dataChannelRef.current;
+
+    if (dc && dc.readyState === "open") {
+      dc.send(inputText);
+
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: inputText,
+        sender: "me",
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      setInputText("");
+    } else {
+      console.warn("Chat not ready");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSend();
+    if (e.key === "Escape") handleSkip();
+  };
+
+  const handleSkip = () => {
+    // call backend to reset connection
+    socket?.emit("reset", { type: "skip" });
+    resetConnection("skip");
+  };
+
+  const handleQuit = () => {
+    socket?.emit("reset", { type: "quit" });
+    socket?.disconnect();
+    resetConnection("quit");
+    window.location.reload();
+  };
+
+  function resetConnection(type: "skip" | "quit" | "lobby") {
+    console.log("Resetting connection...");
+    // stop showing remote video
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    remoteStreamRef.current = null;
+
+    // clear pending ICE
+    pendingRemoteCandidatesRef.current = [];
+    roomIdRef.current = null;
+
+    // close data channel
+    if (dataChannelRef.current) {
+      try {
+        dataChannelRef.current.onopen = null;
+        dataChannelRef.current.onclose = null;
+        dataChannelRef.current.onmessage = null;
+        dataChannelRef.current.close(); // closes RTCDataChannel [web:240]
+      } catch {}
+      dataChannelRef.current = null;
+    }
+
+    if (pcRef.current) {
+      // close peer connection
+      try {
+        pcRef.current.onicecandidate = null;
+        pcRef.current.oniceconnectionstatechange = null;
+        pcRef.current.ondatachannel = null;
+        pcRef.current.ontrack = null;
+        pcRef.current.close(); // closes RTCPeerConnection [web:217]
+      } catch {}
+      pcRef.current = null;
+    }
+
+    // reset UI state
+    setLobby(true);
+    setRole(null);
+    setIsChatOpen(true);
+    setChatReady(false);
+    setMessages([]);
+    setInputText("");
+  }
+
   useEffect(() => {
     if (localVideoRef.current && localVideoTrack) {
       localVideoRef.current.srcObject = new MediaStream([localVideoTrack]);
@@ -198,18 +279,7 @@ export const Room = ({
     const s = io(URL);
     setSocket(s);
 
-    s.on("lobby", () => {
-      setLobby(true);
-      setRole(null);
-      roomIdRef.current = null;
-      setMessages([]);
-      setChatReady(false);
-
-      if (dataChannelRef.current) {
-        dataChannelRef.current.close();
-        dataChannelRef.current = null;
-      }
-    });
+    s.on("lobby", () => resetConnection("lobby"));
 
     s.on(
       "send-offer",
@@ -279,9 +349,17 @@ export const Room = ({
       }
     );
 
+    s.on("reset-requested", () => {
+      console.log("Reset requested by server");
+      resetConnection("skip");
+    });
+
     return () => {
+      s.off("lobby");
+      s.off("reset-requested");
       s.disconnect();
       setSocket(null);
+
       pendingRemoteCandidatesRef.current = [];
       roomIdRef.current = null;
       remoteStreamRef.current = null;
@@ -321,40 +399,6 @@ export const Room = ({
       }
     }
   }, [messages]);
-
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-
-    const dc = dataChannelRef.current;
-
-    if (dc && dc.readyState === "open") {
-      dc.send(inputText);
-
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: inputText,
-        sender: "me",
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, newMessage]);
-      setInputText("");
-    } else {
-      console.warn("Chat not ready");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSend();
-    if (e.key === "Escape") handleSkip();
-  };
-
-  const handleSkip = () => {
-    window.location.reload();
-  };
-
-  const handleQuit = () => {
-    window.location.href = "/";
-  };
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-light-bg dark:bg-dark-bg font-mono text-gray-900 dark:text-gray-100">
