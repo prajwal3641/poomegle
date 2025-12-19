@@ -282,7 +282,11 @@ export const Room = ({
   }, []);
 
   useEffect(() => {
-    const s = io(URL);
+    const s = io(URL, {
+      auth: {
+        name,
+      },
+    });
     setSocket(s);
 
     s.on("lobby", () => resetConnection("lobby"));
