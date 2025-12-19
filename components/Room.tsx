@@ -82,6 +82,12 @@ export const Room = ({
 
   const [liveUsers, setLiveUsers] = useState(0);
 
+  const localAudioTrackRef = useRef(localAudioTrack);
+  const localVideoTrackRef = useRef(localVideoTrack);
+
+  localAudioTrackRef.current = localAudioTrack;
+  localVideoTrackRef.current = localVideoTrack;
+
   // --- WebRTC Logic Implementation ---
 
   function bindDataChannel(dc: RTCDataChannel) {
@@ -158,13 +164,13 @@ export const Room = ({
     };
 
     const localStream = new MediaStream();
-    if (localVideoTrack) {
-      localStream.addTrack(localVideoTrack);
-      pc.addTrack(localVideoTrack, localStream);
+    if (localVideoTrackRef.current) {
+      localStream.addTrack(localVideoTrackRef.current);
+      pc.addTrack(localVideoTrackRef.current, localStream);
     }
-    if (localAudioTrack) {
-      localStream.addTrack(localAudioTrack);
-      pc.addTrack(localAudioTrack, localStream);
+    if (localAudioTrackRef.current) {
+      localStream.addTrack(localAudioTrackRef.current);
+      pc.addTrack(localAudioTrackRef.current, localStream);
     }
 
     pcRef.current = pc;
@@ -349,11 +355,6 @@ export const Room = ({
       }
     );
 
-    s.on("reset-requested", ({ type }) => {
-      console.log("Reset requested by server:", type);
-      resetConnection(type);
-    });
-
     s.on("live-users", ({ count }: { count: number }) => {
       console.log("Live users:", count);
       setLiveUsers(count);
@@ -361,7 +362,6 @@ export const Room = ({
 
     return () => {
       s.off("lobby");
-      s.off("reset-requested");
       s.off("live-users");
       s.off("send-offer");
       s.off("wait-offer");
@@ -390,7 +390,7 @@ export const Room = ({
         pcRef.current = null;
       }
     };
-  }, [name, localAudioTrack, localVideoTrack]);
+  }, []);
 
   // --- UI Functions ---
 
