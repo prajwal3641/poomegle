@@ -60,6 +60,11 @@ export class UserManager {
     const user = this.getUser(socketId);
     if (!user) return;
 
+    if (!user.socket.connected) {
+      this.removeUser(socketId);
+      return;
+    }
+
     // do not re-add to this.users, do not re-init handlers
     if (!this.queue.includes(socketId)) this.queue.push(socketId);
     user.socket.emit("lobby");
