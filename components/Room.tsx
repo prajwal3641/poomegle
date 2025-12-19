@@ -80,6 +80,8 @@ export const Room = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatReady, setChatReady] = useState(false);
 
+  const [liveUsers, setLiveUsers] = useState(0);
+
   // --- WebRTC Logic Implementation ---
 
   function bindDataChannel(dc: RTCDataChannel) {
@@ -354,9 +356,15 @@ export const Room = ({
       resetConnection("skip");
     });
 
+    s.on("live-users", ({ count }: { count: number }) => {
+      console.log("Live users:", count);
+      setLiveUsers(count);
+    });
+
     return () => {
       s.off("lobby");
       s.off("reset-requested");
+      s.off("live-users");
       s.disconnect();
       setSocket(null);
 
@@ -402,7 +410,7 @@ export const Room = ({
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-light-bg dark:bg-dark-bg font-mono text-gray-900 dark:text-gray-100">
-      <Navbar />
+      <Navbar liveUsers={liveUsers} />
 
       <main
         className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-6 md:pb-6 px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-24 relative z-10 transition-all duration-300`}
