@@ -2,9 +2,14 @@ import { Socket, Server } from "socket.io";
 import http from "http";
 
 import express from "express";
+import cors from "cors";
 import { UserManager } from "./managers/UserManager";
 
 const app = express();
+
+// Enable CORS for REST endpoints
+app.use(cors());
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
