@@ -37,7 +37,10 @@ export class RoomManager {
     if (!room) return;
     const recievingUser =
       room.user1.socket.id === senderSocketId ? room.user2 : room.user1;
-    console.log("Sending offer to user:", recievingUser.socket.id);
+    console.log(
+      `Sending offer to ${recievingUser.name.split("-")[0]} :`,
+      recievingUser.socket.id
+    );
     recievingUser?.socket.emit("offer", { sdp, roomId });
   }
 
@@ -48,7 +51,10 @@ export class RoomManager {
     }
     const receivingUser =
       room.user1.socket.id === senderSocketid ? room.user2 : room.user1;
-    console.log("Sending answer to user:", receivingUser.socket.id);
+    console.log(
+      `Sending answer to ${receivingUser.name.split("-")[0]} : `,
+      receivingUser.socket.id
+    );
     receivingUser?.socket.emit("answer", {
       sdp,
       roomId,
