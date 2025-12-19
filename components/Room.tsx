@@ -213,18 +213,16 @@ export const Room = ({
   const handleSkip = () => {
     // call backend to reset connection
     socket?.emit("reset", { type: "skip" });
-    resetConnection("skip");
   };
 
   const handleQuit = () => {
-    socket?.emit("reset", { type: "quit" });
     socket?.disconnect();
-    resetConnection("quit");
     window.location.reload();
   };
 
   function resetConnection(type: "skip" | "quit" | "lobby") {
     console.log("Resetting connection...");
+
     // stop showing remote video
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     remoteStreamRef.current = null;
@@ -360,16 +358,16 @@ export const Room = ({
       console.log("Live users:", count);
       setLiveUsers(count);
     });
-    const handleTabClose = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener("beforeunload", handleTabClose);
 
     return () => {
-      window.removeEventListener("beforeunload", handleTabClose);
       s.off("lobby");
       s.off("reset-requested");
       s.off("live-users");
+      s.off("send-offer");
+      s.off("wait-offer");
+      s.off("offer");
+      s.off("answer");
+      s.off("add-ice-candidate");
       s.disconnect();
       setSocket(null);
 
