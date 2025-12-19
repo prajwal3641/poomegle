@@ -65,6 +65,49 @@ export class UserManager {
     user.socket.emit("lobby");
   }
 
+  handleQuitOrSkip(socket: Socket, type: "quit" | "skip") {
+    console.log("Reset requested by user:", socket.id, "Type:", type);
+    const room = this.roomManager.closeRoomBySocketId(socket.id);
+    if (!room) {
+      // not in a room -> just requeue
+      if (type === "quit") {
+        this.removeUser(socket.id);
+        return;
+      }
+      this.requeueExistingUser(socket.id);
+      socket.emit("lobby");
+      this.clearQueue();
+      return;
+    }
+    const user1 = room.user1;
+    const user2 = room.user2;
+    const recievingUser =
+      room.user1.socket.id === socket.id ? room.user2 : room.user1;
+    const currentUser =
+      room.user1.socket.id === socket.id ? room.user1 : room.user2;
+
+    recievingUser.socket.emit("reset-requested");
+    console.log(
+      "Room closed between:",
+      user1.socket.id,
+      "and",
+      user2.socket.id
+    );
+    // two cases
+    if (type === "quit") {
+      console.log("Current quit:", currentUser.socket.id);
+      console.log("Receiving user:", recievingUser.socket.id);
+      this.removeUser(currentUser.socket.id);
+      this.requeueExistingUser(recievingUser.socket.id);
+    } else {
+      // skip logic here
+      this.requeueExistingUser(currentUser.socket.id);
+      this.requeueExistingUser(recievingUser.socket.id);
+    }
+
+    this.clearQueue();
+  }
+
   initHandlers(socket: Socket) {
     socket.on("offer", ({ sdp, roomId }: { sdp: string; roomId: string }) => {
       // console.log("Offer received for user:", socket.id);
@@ -82,37 +125,7 @@ export class UserManager {
     });
 
     socket.on("reset", ({ type }: { type: "quit" | "skip" }) => {
-      console.log("Reset requested by user:", socket.id, "Type:", type);
-      const senderId = socket.id;
-      const room = this.roomManager.closeRoomBySocketId(senderId);
-      if (!room) {
-        // not in a room -> just requeue
-        this.requeueExistingUser(senderId);
-        socket.emit("lobby");
-        this.clearQueue();
-        return;
-      }
-      const user1 = room.user1;
-      const user2 = room.user2;
-      const recievingUser =
-        room.user1.socket.id === socket.id ? room.user2 : room.user1;
-      const currentUser =
-        room.user1.socket.id === socket.id ? room.user1 : room.user2;
-
-      recievingUser.socket.emit("reset-requested");
-      // two cases
-      if (type === "quit") {
-        console.log("Current quit:", currentUser.socket.id);
-        console.log("Receiving user:", recievingUser.socket.id);
-        this.removeUser(currentUser.socket.id);
-        this.requeueExistingUser(recievingUser.socket.id);
-      } else {
-        // skip logic here
-        this.requeueExistingUser(currentUser.socket.id);
-        this.requeueExistingUser(recievingUser.socket.id);
-      }
-
-      this.clearQueue();
+      this.handleQuitOrSkip(socket, type);
     });
   }
 }

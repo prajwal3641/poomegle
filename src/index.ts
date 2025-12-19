@@ -3,6 +3,7 @@ import http from "http";
 
 import express from "express";
 import { UserManager } from "./managers/UserManager";
+import { RoomManager } from "./managers/RoomManager";
 
 const app = express();
 const server = http.createServer(app);
@@ -19,8 +20,9 @@ io.on("connection", (socket: Socket) => {
   socket.emit("live-users", { count });
   socket.broadcast.emit("live-users", { count });
   userManager.addUser(`User-${socket.id}`, socket);
-  socket.on("disconnect", () => {
-    console.log("user disconnected:", socket.id);
+  socket.on("disconnect", (reason) => {
+    console.log("user disconnected:", socket.id, "and reason is:", reason);
+    userManager.handleQuitOrSkip(socket, "quit");
     const count = io.of("/").sockets.size;
     socket.broadcast.emit("live-users", { count });
     // userManager.removeUser(socket.id);
