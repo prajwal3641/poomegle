@@ -351,9 +351,9 @@ export const Room = ({
       }
     );
 
-    s.on("reset-requested", () => {
-      console.log("Reset requested by server");
-      resetConnection("skip");
+    s.on("reset-requested", ({ type }) => {
+      console.log("Reset requested by server:", type);
+      resetConnection(type);
     });
 
     s.on("live-users", ({ count }: { count: number }) => {
@@ -362,10 +362,6 @@ export const Room = ({
     });
     const handleTabClose = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      // Your cleanup / API call / logging here
-      alert("You are leaving the room. Goodbye!");
-      handleQuit();
-      event.returnValue = "Leav"; // required by some browsers to show confirm dialog
     };
     window.addEventListener("beforeunload", handleTabClose);
 
@@ -374,7 +370,6 @@ export const Room = ({
       s.off("lobby");
       s.off("reset-requested");
       s.off("live-users");
-      handleQuit();
       s.disconnect();
       setSocket(null);
 
