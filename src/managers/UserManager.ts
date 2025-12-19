@@ -75,7 +75,6 @@ export class UserManager {
         return;
       }
       this.requeueExistingUser(socket.id);
-      socket.emit("lobby");
       this.clearQueue();
       return;
     }
@@ -86,7 +85,6 @@ export class UserManager {
     const currentUser =
       room.user1.socket.id === socket.id ? room.user1 : room.user2;
 
-    recievingUser.socket.emit("reset-requested");
     console.log(
       "Room closed between:",
       user1.socket.id,
