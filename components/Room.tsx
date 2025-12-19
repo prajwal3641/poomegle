@@ -85,6 +85,8 @@ export const Room = ({
   const localAudioTrackRef = useRef(localAudioTrack);
   const localVideoTrackRef = useRef(localVideoTrack);
 
+  const [strangerName, setStrangerName] = useState("Stranger");
+
   localAudioTrackRef.current = localAudioTrack;
   localVideoTrackRef.current = localVideoTrack;
 
@@ -293,10 +295,19 @@ export const Room = ({
 
     s.on(
       "send-offer",
-      async ({ roomId, role }: { roomId: string; role?: Role }) => {
+      async ({
+        roomId,
+        name,
+        role,
+      }: {
+        roomId: string;
+        name: string;
+        role?: Role;
+      }) => {
         setLobby(false);
         const r = role ?? "offerer";
         setRole(r);
+        setStrangerName(name);
         roomIdRef.current = roomId;
         const pc = ensurePc(s, r);
         const offer = await pc.createOffer();
@@ -305,15 +316,27 @@ export const Room = ({
       }
     );
 
-    s.on("wait-offer", ({ roomId, role }: { roomId: string; role?: Role }) => {
-      setLobby(false);
-      const r = role ?? "answerer";
-      setRole(r);
-      roomIdRef.current = roomId;
+    s.on(
+      "wait-offer",
+      ({
+        roomId,
+        name,
+        role,
+      }: {
+        roomId: string;
+        name: string;
+        role?: Role;
+      }) => {
+        setLobby(false);
+        const r = role ?? "answerer";
+        setRole(r);
+        setStrangerName(name);
+        roomIdRef.current = roomId;
 
-      // Create PC and attach tracks, but do not create offer.
-      ensurePc(s, r);
-    });
+        // Create PC and attach tracks, but do not create offer.
+        ensurePc(s, r);
+      }
+    );
 
     s.on(
       "offer",
@@ -471,8 +494,8 @@ export const Room = ({
             >
               skip
             </button>
-            <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
-              Stranger
+            <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-black-400 dark:text-black-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
+              {strangerName}
             </div>
           </div>
 

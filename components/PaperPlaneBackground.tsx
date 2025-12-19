@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 export const PaperPlaneBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,7 +8,7 @@ export const PaperPlaneBackground: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let width = window.innerWidth;
@@ -20,12 +20,12 @@ export const PaperPlaneBackground: React.FC = () => {
       canvas.width = width;
       canvas.height = height;
     };
-    window.addEventListener('resize', resize);
+    window.addEventListener("resize", resize);
     resize();
 
     // --- Configuration ---
     const DURATION = 14000; // Time per loop
-    const TRAIL_LENGTH_TIME = 1200; 
+    const TRAIL_LENGTH_TIME = 1200;
     const TRAIL_SEGMENTS = 50;
     const FOV = 900;
     const SCALE_FACTOR = 1.8;
@@ -36,7 +36,7 @@ export const PaperPlaneBackground: React.FC = () => {
     // Input 0..1, Output 0..1
     const getCurvedTime = (p: number) => {
       // 1 - (1-p)^2.2 makes it zoom fast initially then glide
-      return 1 - Math.pow(1 - p, 2.2); 
+      return 1 - Math.pow(1 - p, 2.2);
     };
 
     // Path definitions
@@ -50,27 +50,27 @@ export const PaperPlaneBackground: React.FC = () => {
         // Path 0: Classic Top-Left to Bottom-Right (Wide Spiral)
         {
           start: { x: -hw * 1.5, y: -hh * 1.5, z: 1200 },
-          end:   { x: hw * 1.5, y: hh * 1.2, z: -400 },
+          end: { x: hw * 1.5, y: hh * 1.2, z: -400 },
           radius: minDim * 0.5, // Wide
           loops: 3,
-          rotationOffset: 0
+          rotationOffset: 0,
         },
         // Path 1: Top-Right to Bottom-Left (Cross Screen)
         {
           start: { x: hw * 1.5, y: -hh * 1.5, z: 1200 },
-          end:   { x: -hw * 1.5, y: hh * 1.5, z: -400 },
+          end: { x: -hw * 1.5, y: hh * 1.5, z: -400 },
           radius: minDim * 0.6, // Even Wider
           loops: 2.5,
-          rotationOffset: Math.PI
+          rotationOffset: Math.PI,
         },
         // Path 2: Top-Center to Left-Bottom (Deep dive)
         {
           start: { x: 0, y: -hh * 2, z: 1500 },
-          end:   { x: -hw * 1.2, y: hh * 1.8, z: -200 },
+          end: { x: -hw * 1.2, y: hh * 1.8, z: -200 },
           radius: minDim * 0.7, // Very Wide spiral
           loops: 2,
-          rotationOffset: Math.PI / 2
-        }
+          rotationOffset: Math.PI / 2,
+        },
       ];
 
       return paths[index % paths.length];
@@ -80,7 +80,7 @@ export const PaperPlaneBackground: React.FC = () => {
     const getPos = (progress: number, pathIdx: number) => {
       // 1. Apply speed curve
       const t = getCurvedTime(progress);
-      
+
       // 2. Get current path params
       const config = getPathConfig(pathIdx);
 
@@ -97,23 +97,23 @@ export const PaperPlaneBackground: React.FC = () => {
       return {
         x: lx + sx,
         y: ly + sy,
-        z: lz
+        z: lz,
       };
     };
 
     // Project 3D -> 2D
-    const project = (p: {x: number, y: number, z: number}) => {
+    const project = (p: { x: number; y: number; z: number }) => {
       const safeZ = Math.max(p.z, -FOV + 10);
       const scale = FOV / (FOV + safeZ);
       return {
         x: width / 2 + p.x * scale,
         y: height / 2 + p.y * scale,
-        scale: scale
+        scale: scale,
       };
     };
 
     // --- Animation Loop ---
-    
+
     let startTime = Date.now();
     let currentPathIndex = 0;
     let frameId: number;
@@ -121,7 +121,7 @@ export const PaperPlaneBackground: React.FC = () => {
     const animate = () => {
       const now = Date.now();
       let elapsed = now - startTime;
-      
+
       // Check if loop finished
       if (elapsed > DURATION) {
         startTime = now;
@@ -132,22 +132,24 @@ export const PaperPlaneBackground: React.FC = () => {
       const linearT = elapsed / DURATION; // 0 to 1
 
       // Theme Colors
-      const isDark = document.documentElement.classList.contains('dark');
-      const planeColor = isDark ? '#FFC8C8' : '#4b5563'; 
-      const trailColor = isDark ? 'rgba(255, 200, 200, 0.3)' : 'rgba(75, 85, 99, 0.3)';
+      const isDark = document.documentElement.classList.contains("dark");
+      const planeColor = isDark ? "#FFC8C8" : "#4b5563";
+      const trailColor = isDark
+        ? "rgba(255, 200, 200, 0.3)"
+        : "rgba(75, 85, 99, 0.3)";
 
       ctx.clearRect(0, 0, width, height);
-      
+
       // --- Draw Trail ---
       // We need to calculate previous points based on current path config
-      const trailPoints: {x: number, y: number}[] = [];
-      
+      const trailPoints: { x: number; y: number }[] = [];
+
       for (let i = 0; i <= TRAIL_SEGMENTS; i++) {
         const dt = (i / TRAIL_SEGMENTS) * (TRAIL_LENGTH_TIME / DURATION);
         const pt = linearT - dt;
-        
+
         if (pt < 0) continue; // Don't draw trail from previous loop
-        
+
         const pos3d = getPos(pt, currentPathIndex);
         const pos2d = project(pos3d);
         trailPoints.push(pos2d);
@@ -159,44 +161,47 @@ export const PaperPlaneBackground: React.FC = () => {
         for (let i = 1; i < trailPoints.length; i++) {
           ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
         }
-        
+
         ctx.setLineDash([8, 16]);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         ctx.lineWidth = 2;
         ctx.strokeStyle = trailColor;
         ctx.stroke();
-        ctx.setLineDash([]); 
+        ctx.setLineDash([]);
       }
-      
+
       // --- Draw Plane ---
       const currentPos3d = getPos(linearT, currentPathIndex);
       const currentPos2d = project(currentPos3d);
-      
+
       // Calculate rotation
-      const futurePos3d = getPos(Math.min(linearT + 0.005, 1), currentPathIndex);
+      const futurePos3d = getPos(
+        Math.min(linearT + 0.005, 1),
+        currentPathIndex
+      );
       const futurePos2d = project(futurePos3d);
-      
+
       const dx = futurePos2d.x - currentPos2d.x;
       const dy = futurePos2d.y - currentPos2d.y;
       const rotationAngle = Math.atan2(dy, dx);
-      
+
       ctx.save();
       ctx.translate(currentPos2d.x, currentPos2d.y);
       ctx.rotate(rotationAngle);
       ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
-      
+
       ctx.fillStyle = planeColor;
-      
+
       // Plane Shape
       ctx.beginPath();
-      ctx.moveTo(15, 0);    // Nose
-      ctx.lineTo(-10, 8);   // Left Wing
-      ctx.lineTo(-5, 0);    // Center indent
-      ctx.lineTo(-10, -8);  // Right Wing
+      ctx.moveTo(15, 0); // Nose
+      ctx.lineTo(-10, 8); // Left Wing
+      ctx.lineTo(-5, 0); // Center indent
+      ctx.lineTo(-10, -8); // Right Wing
       ctx.closePath();
       ctx.fill();
-      
+
       ctx.restore();
 
       frameId = requestAnimationFrame(animate);
@@ -205,14 +210,14 @@ export const PaperPlaneBackground: React.FC = () => {
     animate();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("resize", resize);
       cancelAnimationFrame(frameId);
     };
   }, []);
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       className="fixed inset-0 w-full h-full pointer-events-none z-0"
     />
   );

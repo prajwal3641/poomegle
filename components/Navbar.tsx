@@ -33,7 +33,7 @@ export const Navbar: React.FC<{ liveUsers?: number }> = ({ liveUsers }) => {
               animateStat ? "animate-rubber" : ""
             }`}
           >
-            {liveUsers} unemployed online
+            {liveUsers || 0} unemployed online
           </div>
         </div>
         <ThemeToggle />
