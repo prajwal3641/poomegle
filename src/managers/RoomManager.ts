@@ -28,8 +28,16 @@ export class RoomManager {
       `Room ${roomId} created between ${user1.name} and ${user2.name}`
     );
 
-    user1.socket.emit("send-offer", { roomId, role: "offerer" });
-    user2.socket.emit("wait-offer", { roomId, role: "answerer" });
+    user1.socket.emit("send-offer", {
+      roomId,
+      name: user2.name.split("-")[0],
+      role: "offerer",
+    });
+    user2.socket.emit("wait-offer", {
+      roomId,
+      name: user1.name.split("-")[0],
+      role: "answerer",
+    });
   }
 
   onOffer(roomId: string, sdp: string, senderSocketId: string) {
