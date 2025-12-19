@@ -55,24 +55,36 @@ export const Landing = () => {
     const [showStatic, setShowStatic] = useState(true); // Start with static
 
     const getCam = async () => {
+        // Request video and audio SEPARATELY so they're independent
+        // If user denies/revokes mic, video still works!
+        
+        // 1. Try to get VIDEO
         try {
-            const stream = await window.navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            })
-            const audioTrack = stream.getAudioTracks()[0]
-            const videoTrack = stream.getVideoTracks()[0]
-            setLocalAudioTrack(audioTrack)
+            const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+            const videoTrack = videoStream.getVideoTracks()[0]
             setLocalVideoTrack(videoTrack)
+            
             if (videoRef.current) {
                 videoRef.current.srcObject = new MediaStream([videoTrack])
             }
-            setIsLoading(false)
         } catch (err) {
             console.error("Camera error:", err)
             setError("Camera access denied")
             setIsLoading(false)
+            return // Can't continue without video
         }
+        
+        // 2. Try to get AUDIO (independently)
+        try {
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const audioTrack = audioStream.getAudioTracks()[0]
+            setLocalAudioTrack(audioTrack)
+        } catch (err) {
+            console.error("Mic error:", err)
+            // Video still works! Just no mic.
+        }
+        
+        setIsLoading(false)
     }
 
     useEffect(() => {
