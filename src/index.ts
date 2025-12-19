@@ -13,6 +13,12 @@ const io = new Server(server, {
 });
 const userManager = new UserManager();
 
+// REST endpoint for live user count (used by Landing page)
+app.get("/live-users", (req, res) => {
+  const count = io.of("/").sockets.size;
+  res.json({ count });
+});
+
 io.on("connection", (socket: Socket) => {
   console.log("a user connected:", socket.id);
   const count = io.of("/").sockets.size; // standard single-node count [web:320]
