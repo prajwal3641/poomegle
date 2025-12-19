@@ -360,11 +360,21 @@ export const Room = ({
       console.log("Live users:", count);
       setLiveUsers(count);
     });
+    const handleTabClose = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Your cleanup / API call / logging here
+      alert("You are leaving the room. Goodbye!");
+      handleQuit();
+      event.returnValue = "Leav"; // required by some browsers to show confirm dialog
+    };
+    window.addEventListener("beforeunload", handleTabClose);
 
     return () => {
+      window.removeEventListener("beforeunload", handleTabClose);
       s.off("lobby");
       s.off("reset-requested");
       s.off("live-users");
+      handleQuit();
       s.disconnect();
       setSocket(null);
 
