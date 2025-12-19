@@ -65,6 +65,9 @@ export const Landing = () => {
   // Static animation state
   const [showStatic, setShowStatic] = useState(true); // Start with static
 
+    // Live user count (fetch once on mount)
+    const [liveUsers, setLiveUsers] = useState<number>(0);
+
   const getCam = async () => {
     // Request video and audio SEPARATELY so they're independent
     // If user denies/revokes mic, video still works!
@@ -101,6 +104,21 @@ export const Landing = () => {
 
     setIsLoading(false);
   };
+
+    useEffect(() => {
+        // Fetch live user count once on mount
+        const fetchLiveUsers = async () => {
+            try {
+                const url = process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
+                const res = await fetch(`${url}/live-users`);
+                const data = await res.json();
+                setLiveUsers(data.count);
+            } catch (err) {
+                console.error("Failed to fetch live users:", err);
+            }
+        };
+        fetchLiveUsers();
+    }, []);
 
   useEffect(() => {
     getCam();
@@ -161,7 +179,7 @@ export const Landing = () => {
   return (
     <div className="min-h-screen flex flex-col relative overflow-y-auto overflow-x-hidden bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 font-mono">
       <PaperPlaneBackground />
-      <Navbar />
+      <Navbar liveUsers={liveUsers} />
 
       <main className="flex-grow flex items-center justify-center p-4 md:p-8 lg:p-12 mt-16 md:mt-0 pb-12 md:pb-16 relative z-10">
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-20 items-center">
