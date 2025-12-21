@@ -468,7 +468,7 @@ export const Room = ({
       </div>
 
       <main
-        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-2 md:pb-6 px-4 md:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-4 md:pt-16 relative z-10 transition-all duration-300`}
+        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-2 md:pb-6 px-4 md:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-16 relative z-10 transition-all duration-300`}
       >
         {/* Left Column: Video Feeds */}
         <div
@@ -528,7 +528,7 @@ export const Room = ({
                 </span>
               </div>
             </button>
-            <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-black-400 dark:text-black-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
+            <div className="absolute top-2 left-3 md:top-4 md:left-5 text-black-400 dark:text-black-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               {strangerName}
             </div>
           </div>
@@ -557,7 +557,7 @@ export const Room = ({
                 </span>
               </div>
             </button>
-            <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
+            <div className="absolute top-2 left-3 md:top-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               You
             </div>
             
@@ -617,7 +617,7 @@ export const Room = ({
           </div>
 
           {/* Input Area */}
-          <div className="h-10 md:h-14 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1 md:px-1.5 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
+          <div className="h-12 md:h-14 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1 md:px-1.5 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
             <input
               className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white text-xs md:text-sm px-3 md:px-4 placeholder-gray-400 dark:placeholder-gray-600 font-mono h-full outline-none disabled:opacity-50"
               placeholder={chatReady ? "type a msg .." : "Connecting..."}
@@ -630,9 +630,9 @@ export const Room = ({
             <button
               onClick={handleSend}
               disabled={!chatReady}
-              className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center bg-primary text-gray-900 rounded-full hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-primary text-gray-900 rounded-full hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send size={16} className="md:w-5 md:h-5 ml-0.5 mt-0.5" />
+              <Send size={18} className="md:w-5 md:h-5 ml-0.5 mt-0.5" />
             </button>
           </div>
         </div>
