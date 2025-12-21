@@ -82,9 +82,8 @@ export const Room = ({
 
   // Default chat state on mobile
   useEffect(() => {
-    if (window.innerWidth < 768) {
-      setIsChatOpen(false);
-    }
+    const isMobile = window.innerWidth < 768;
+    setIsChatOpen(!isMobile);
   }, []);
 
   const [liveUsers, setLiveUsers] = useState(0);
@@ -98,6 +97,13 @@ export const Room = ({
   localVideoTrackRef.current = localVideoTrack;
 
   const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    // Sync initial mute state
+    if (localAudioTrack) {
+      setIsMuted(!localAudioTrack.enabled);
+    }
+  }, [localAudioTrack]);
 
   // --- WebRTC Logic Implementation ---
 
@@ -281,11 +287,8 @@ export const Room = ({
     // reset UI state
     setLobby(true);
     setRole(null);
-    if (window.innerWidth < 768) {
-        setIsChatOpen(false);
-    } else {
-        setIsChatOpen(true);
-    }
+    const isMobile = window.innerWidth < 768;
+    setIsChatOpen(!isMobile);
     setChatReady(false);
     setMessages([]);
     setInputText("");
@@ -460,10 +463,12 @@ export const Room = ({
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-light-bg dark:bg-dark-bg font-mono text-gray-900 dark:text-gray-100">
-      <Navbar liveUsers={liveUsers} />
+      <div className="hidden md:block">
+        <Navbar liveUsers={liveUsers} />
+      </div>
 
       <main
-        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-2 md:pb-6 px-4 md:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-24 relative z-10 transition-all duration-300`}
+        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-2 md:pb-6 px-4 md:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-4 md:pt-16 relative z-10 transition-all duration-300`}
       >
         {/* Left Column: Video Feeds */}
         <div
@@ -472,7 +477,7 @@ export const Room = ({
             transition-all duration-300 
             ${
               isChatOpen
-                ? "flex flex-row lg:flex-col lg:col-span-5 h-[20vh] md:h-[30vh] lg:h-full" // Mobile: Horizontal when chat open
+                ? "flex flex-row lg:flex-col lg:col-span-5 h-[30vh] md:h-[30vh] lg:h-full" // Mobile: Horizontal when chat open
                 : "flex flex-col lg:col-span-12 flex-1 lg:grid lg:grid-cols-2 lg:gap-8 justify-center items-center h-auto" // Mobile: Vertical when chat closed
             }
         `}
@@ -510,9 +515,18 @@ export const Room = ({
 
             <button
               onClick={handleSkip}
-              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer hidden md:block"
+              disabled={lobby}
+              className={`absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 p-2 md:p-3 rounded-full hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center group/skip overflow-hidden ${
+                lobby ? "opacity-50 cursor-not-allowed" : "text-gray-900 dark:text-white"
+              }`}
+              title="Skip"
             >
-              skip
+              <div className="flex items-center gap-2 group-hover/skip:w-auto">
+                <SkipForward size={20} className="shrink-0" />
+                <span className="max-w-0 overflow-hidden group-hover/skip:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-bold">
+                  Skip
+                </span>
+              </div>
             </button>
             <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-black-400 dark:text-black-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               {strangerName}
@@ -533,20 +547,39 @@ export const Room = ({
 
             <button
               onClick={handleQuit}
-              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-red-200 dark:border-red-500/30 text-red-500 dark:text-red-400 px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer hidden md:block"
+              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 p-2 md:p-3 rounded-full hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center group/quit text-gray-900 dark:text-white overflow-hidden"
+              title="Quit"
             >
-              quit
+              <div className="flex items-center gap-2 group-hover/quit:w-auto">
+                <StopSquare size={20} className="shrink-0" />
+                <span className="max-w-0 overflow-hidden group-hover/quit:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-bold">
+                  Quit
+                </span>
+              </div>
             </button>
             <div className="absolute bottom-2 left-3 md:bottom-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               You
             </div>
+            
+            {/* Desktop Mic Toggle */}
+            <button
+              onClick={handleToggleMute}
+              className={`absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border p-2 md:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center ${
+                isMuted 
+                  ? "border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 bg-red-100/80 dark:bg-red-900/40" 
+                  : "border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+              }`}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+            </button>
           </div>
         </div>
 
         {/* Right Column: Chat */}
         <div
           className={`lg:col-span-7 flex flex-col gap-3 md:gap-4 flex-1 lg:h-full min-h-0 relative transition-all duration-300 ${
-            !isChatOpen ? "hidden lg:flex" : "flex mb-24 lg:mb-0"
+            !isChatOpen ? "hidden lg:flex" : "flex mb-20 lg:mb-0"
           }`}
         >
           {/* Chat History Area */}
@@ -570,7 +603,7 @@ export const Room = ({
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`max-w-[85%] md:max-w-[80%] px-3 py-2 md:px-4 md:py-2.5 rounded-2xl text-sm md:text-base break-words shadow-sm ${
+                  className={`max-w-[85%] md:max-w-[80%] px-3 py-2 md:px-4 md:py-2 rounded-2xl text-xs md:text-sm break-words shadow-sm ${
                     msg.sender === "me"
                       ? "self-end bg-primary text-gray-900 rounded-br-none"
                       : "self-start bg-gray-100 dark:bg-dark-highlight text-gray-800 dark:text-gray-200 rounded-bl-none"
@@ -584,9 +617,9 @@ export const Room = ({
           </div>
 
           {/* Input Area */}
-          <div className="h-12 md:h-16 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1.5 md:px-2 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
+          <div className="h-10 md:h-14 shrink-0 bg-white dark:bg-dark-surface rounded-full border border-gray-200 dark:border-white/10 flex items-center px-1 md:px-1.5 shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 transition-all duration-200 mb-2 lg:mb-0">
             <input
-              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white text-sm md:text-lg px-4 md:px-6 placeholder-gray-400 dark:placeholder-gray-600 font-mono h-full outline-none disabled:opacity-50"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white text-xs md:text-sm px-3 md:px-4 placeholder-gray-400 dark:placeholder-gray-600 font-mono h-full outline-none disabled:opacity-50"
               placeholder={chatReady ? "type a msg .." : "Connecting..."}
               type="text"
               value={inputText}
@@ -597,17 +630,17 @@ export const Room = ({
             <button
               onClick={handleSend}
               disabled={!chatReady}
-              className="mr-0.5 md:mr-1 bg-primary text-gray-900 font-bold text-xs md:text-sm hover:bg-white hover:scale-105 active:scale-95 px-4 py-2 md:px-6 md:py-2.5 rounded-full transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+              className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center bg-primary text-gray-900 rounded-full hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              send
+              <Send size={16} className="md:w-5 md:h-5 ml-0.5 mt-0.5" />
             </button>
           </div>
         </div>
       </main>
 
       {/* Mobile Dock Overlay */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 md:hidden w-full px-4 flex justify-center pointer-events-none">
-         <div className="flex items-center gap-6 px-8 py-3 bg-white dark:bg-dark-surface backdrop-blur-xl rounded-full border border-gray-200 dark:border-white/10 shadow-2xl pointer-events-auto">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 md:hidden w-full px-4 flex justify-center pointer-events-none">
+         <div className="flex items-center gap-5 px-6 py-2.5 bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-full border border-white/20 shadow-xl pointer-events-auto scale-95">
             <button
               onClick={handleToggleMute}
               className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all ${
@@ -618,7 +651,10 @@ export const Room = ({
             </button>
             <button
               onClick={handleSkip}
-              className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+              disabled={lobby}
+              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
+                lobby ? "opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-600" : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              }`}
             >
               <SkipForward size={24} />
             </button>

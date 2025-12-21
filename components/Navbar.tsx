@@ -16,10 +16,10 @@ export const Navbar: React.FC<{ liveUsers?: number }> = ({ liveUsers }) => {
   }, []);
 
   return (
-    <nav className="w-full p-3 md:p-6 flex justify-between items-center z-20 absolute top-0 left-0 bg-transparent pointer-events-none">
+    <nav className="w-full p-2 md:p-4 flex justify-between items-center z-20 absolute top-0 left-0 bg-transparent pointer-events-none">
       <div
         onClick={() => router.push("/")}
-        className="pointer-events-auto text-2xl md:text-5xl font-display tracking-wide transform -rotate-2 select-none cursor-pointer hover:rotate-0 transition-transform text-gray-900 dark:text-white"
+        className="pointer-events-auto text-xl md:text-3xl font-display tracking-wide transform -rotate-2 select-none cursor-pointer hover:rotate-0 transition-transform text-gray-900 dark:text-white"
       >
         LOOP
       </div>

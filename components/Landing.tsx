@@ -252,18 +252,6 @@ export const Landing = () => {
                     <MicOff className="text-gray-900 w-4 h-4 md:w-6 md:h-6" />
                   )}
                 </button>
-                <button
-                  onClick={() => setCamOn(!camOn)}
-                  className={`w-10 h-10 md:w-14 md:h-14 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-lg ${
-                    camOn ? "bg-primary" : "bg-red-200 dark:bg-red-400/80"
-                  }`}
-                >
-                  {camOn ? (
-                    <Video className="text-gray-900 w-4 h-4 md:w-6 md:h-6" />
-                  ) : (
-                    <VideoOff className="text-gray-900 w-4 h-4 md:w-6 md:h-6" />
-                  )}
-                </button>
               </div>
               <button
                 onClick={toggleFilter}
