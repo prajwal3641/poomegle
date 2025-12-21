@@ -27,13 +27,9 @@ export const Navbar: React.FC<{ liveUsers?: number }> = ({ liveUsers }) => {
         <div
           className={`flex items-center gap-2 bg-white/50 dark:bg-dark-highlight/50 backdrop-blur-sm px-2 py-1 md:px-3 md:py-1.5 rounded-full border border-gray-200 dark:border-white/5`}
         >
-          <div className="w-1.5 h-1.5 md:w-2 md:h-2 shrink-0 rounded-full bg-neon"></div>
-          <div
-            className={`text-green-700 dark:text-neon text-[10px] md:text-sm font-bold tracking-tight truncate ${
-              animateStat ? "animate-rubber" : ""
-            }`}
-          >
-            {liveUsers || 0} unemployed online
+          <div className="w-2 h-2 shrink-0 rounded-full bg-green-500 animate-pulse"></div>
+          <div className="text-gray-900 dark:text-gray-100 text-[10px] md:text-xs font-mono tracking-tight">
+            {liveUsers ? liveUsers.toLocaleString() : 0} users online
           </div>
         </div>
         <ThemeToggle />

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { VideoOff, UserX, X, MessageSquare } from "lucide-react";
+import { VideoOff, UserX, X, MessageSquare, Mic, MicOff, SkipForward, Square as StopSquare, Send, Settings } from "lucide-react";
 import { Navbar } from "./Navbar";
 import { useRouter } from "next/navigation";
 
@@ -80,6 +80,13 @@ export const Room = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatReady, setChatReady] = useState(false);
 
+  // Default chat state on mobile
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setIsChatOpen(false);
+    }
+  }, []);
+
   const [liveUsers, setLiveUsers] = useState(0);
 
   const localAudioTrackRef = useRef(localAudioTrack);
@@ -89,6 +96,8 @@ export const Room = ({
 
   localAudioTrackRef.current = localAudioTrack;
   localVideoTrackRef.current = localVideoTrack;
+
+  const [isMuted, setIsMuted] = useState(false);
 
   // --- WebRTC Logic Implementation ---
 
@@ -192,6 +201,13 @@ export const Room = ({
     }
   }
 
+  const handleToggleMute = () => {
+    if (localAudioTrackRef.current) {
+      localAudioTrackRef.current.enabled = !localAudioTrackRef.current.enabled;
+      setIsMuted(!localAudioTrackRef.current.enabled);
+    }
+  };
+
   const handleSend = () => {
     if (!inputText.trim()) return;
 
@@ -265,7 +281,11 @@ export const Room = ({
     // reset UI state
     setLobby(true);
     setRole(null);
-    setIsChatOpen(true);
+    if (window.innerWidth < 768) {
+        setIsChatOpen(false);
+    } else {
+        setIsChatOpen(true);
+    }
     setChatReady(false);
     setMessages([]);
     setInputText("");
@@ -443,7 +463,7 @@ export const Room = ({
       <Navbar liveUsers={liveUsers} />
 
       <main
-        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-6 md:pb-6 px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-24 relative z-10 transition-all duration-300`}
+        className={`flex-grow w-full max-w-[1800px] mx-auto p-4 md:p-6 pb-2 md:pb-6 px-4 md:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-4 md:gap-6 min-h-0 pt-20 md:pt-24 relative z-10 transition-all duration-300`}
       >
         {/* Left Column: Video Feeds */}
         <div
@@ -452,7 +472,7 @@ export const Room = ({
             transition-all duration-300 
             ${
               isChatOpen
-                ? "flex flex-row lg:flex-col lg:col-span-5 h-[25vh] md:h-[30vh] lg:h-full" // Mobile: Horizontal when chat open
+                ? "flex flex-row lg:flex-col lg:col-span-5 h-[20vh] md:h-[30vh] lg:h-full" // Mobile: Horizontal when chat open
                 : "flex flex-col lg:col-span-12 flex-1 lg:grid lg:grid-cols-2 lg:gap-8 justify-center items-center h-auto" // Mobile: Vertical when chat closed
             }
         `}
@@ -490,7 +510,7 @@ export const Room = ({
 
             <button
               onClick={handleSkip}
-              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer"
+              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer hidden md:block"
             >
               skip
             </button>
@@ -513,7 +533,7 @@ export const Room = ({
 
             <button
               onClick={handleQuit}
-              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-red-200 dark:border-red-500/30 text-red-500 dark:text-red-400 px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer"
+              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-red-200 dark:border-red-500/30 text-red-500 dark:text-red-400 px-3 py-1 md:px-5 md:py-2 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200 font-bold text-xs md:text-sm shadow-sm z-20 cursor-pointer hidden md:block"
             >
               quit
             </button>
@@ -526,15 +546,15 @@ export const Room = ({
         {/* Right Column: Chat */}
         <div
           className={`lg:col-span-7 flex flex-col gap-3 md:gap-4 flex-1 lg:h-full min-h-0 relative transition-all duration-300 ${
-            !isChatOpen ? "hidden lg:flex" : "flex"
+            !isChatOpen ? "hidden lg:flex" : "flex mb-24 lg:mb-0"
           }`}
         >
           {/* Chat History Area */}
           <div className="flex-1 bg-white dark:bg-dark-surface rounded-2xl md:rounded-3xl border border-gray-200 dark:border-white/5 p-4 md:p-6 relative flex flex-col overflow-hidden shadow-lg">
-            {/* Close Chat Button - Hidden on Desktop */}
+            {/* Close Chat Button - Hidden on Desktop and Mobile (controlled by dock on mobile) */}
             <button
               onClick={() => setIsChatOpen(false)}
-              className="absolute top-3 right-3 p-2 bg-gray-100 dark:bg-dark-highlight rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-20 lg:hidden"
+              className="absolute top-3 right-3 p-2 bg-gray-100 dark:bg-dark-highlight rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-20 hidden"
               title="Close chat"
             >
               <X size={18} className="text-gray-500 dark:text-gray-400" />
@@ -585,11 +605,45 @@ export const Room = ({
         </div>
       </main>
 
-      {/* Floating Open Chat Button (only when chat is closed) - Hidden on Desktop */}
+      {/* Mobile Dock Overlay */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 md:hidden w-full px-4 flex justify-center pointer-events-none">
+         <div className="flex items-center gap-6 px-8 py-3 bg-white dark:bg-dark-surface backdrop-blur-xl rounded-full border border-gray-200 dark:border-white/10 shadow-2xl pointer-events-auto">
+            <button
+              onClick={handleToggleMute}
+              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all ${
+                isMuted ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              }`}
+            >
+              {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+            </button>
+            <button
+              onClick={handleSkip}
+              className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+            >
+              <SkipForward size={24} />
+            </button>
+            <button
+              onClick={handleQuit}
+              className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+            >
+              <StopSquare size={24} />
+            </button>
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
+                isChatOpen ? "bg-gray-100 dark:bg-white/10 text-primary" : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              }`}
+            >
+              <MessageSquare size={24} />
+            </button>
+         </div>
+      </div>
+
+      {/* Floating Open Chat Button (only when chat is closed) - Hidden on Desktop and Mobile */}
       {!isChatOpen && (
         <button
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-20 right-6 md:bottom-28 md:right-8 w-12 h-12 md:w-14 md:h-14 bg-primary text-gray-900 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 border-2 border-gray-900 lg:hidden"
+          className="fixed bottom-20 right-6 md:bottom-28 md:right-8 w-12 h-12 md:w-14 md:h-14 bg-primary text-gray-900 rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 border-2 border-gray-900 hidden"
           title="Open chat"
         >
           <MessageSquare
