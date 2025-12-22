@@ -59,19 +59,16 @@ async function getRtcConfig(): Promise<RTCConfiguration> {
   }
 }
 
-
 export const Room = () => {
   const router = useRouter();
 
-  // Get user name from session storage
-  const [name, setName] = useState("chutiya");
-  
-  useEffect(() => {
-    const storedName = sessionStorage.getItem("userName");
-    if (storedName) {
-      setName(storedName);
+  // Get user name from session storage (lazy initialization to avoid race condition with socket)
+  const [name] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("userName") || "Anonymous";
     }
-  }, []);
+    return "Anonymous";
+  });
 
   // -- Use Custom Hook for Local Media --
   const {
@@ -84,7 +81,6 @@ export const Room = () => {
     camOn,
     setCamOn,
   } = useMediaStream();
-
 
   // -- WebRTC Logic State --
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -116,34 +112,33 @@ export const Room = () => {
 
   const [liveUsers, setLiveUsers] = useState(0);
 
-
   const localAudioTrackRef = useRef(localAudioTrack);
   const localVideoTrackRef = useRef(localVideoTrack);
 
   useEffect(() => {
-      localAudioTrackRef.current = localAudioTrack;
+    localAudioTrackRef.current = localAudioTrack;
   }, [localAudioTrack]);
 
   useEffect(() => {
-      localVideoTrackRef.current = localVideoTrack;
+    localVideoTrackRef.current = localVideoTrack;
   }, [localVideoTrack]);
 
   const [strangerName, setStrangerName] = useState("Stranger");
-  
+
   // Use state derived from hook or internal state for muting
   // Since we have setMicOn from hook, we can use that to control mute state if we want two-way binding
   // or keep local isMuted state. The hook manages track.enabled based on micOn.
   // Let's use internal isMuted to toggle the hook's setMicOn
-  
+
   const handleToggleMute = () => {
     setMicOn(!micOn);
   };
-  
+
   const isMuted = !micOn;
 
   // No longer need this useEffect to sync initial mute state as the hook handles it
   // But we need to make sure track is enabled/disabled correctly in WebRTC
-  
+
   // --- WebRTC Logic Implementation ---
 
   function bindDataChannel(dc: RTCDataChannel) {
@@ -245,7 +240,6 @@ export const Room = () => {
       }
     }
   }
-
 
   const handleSend = () => {
     if (!inputText.trim()) return;

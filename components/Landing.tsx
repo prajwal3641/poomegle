@@ -142,7 +142,6 @@ export const Landing = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-y-auto overflow-x-hidden bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 font-mono">
-
       <PaperPlaneBackground />
       <Navbar liveUsers={liveUsers} />
 
