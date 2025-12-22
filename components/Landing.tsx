@@ -231,7 +231,7 @@ export const Landing = () => {
               <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
                 By joining, you agree to our{" "}
                 <a
-                  href="#"
+                  href="/guidelines"
                   className="underline hover:text-gray-700 dark:hover:text-gray-300"
                 >
                   terms and community guidelines
