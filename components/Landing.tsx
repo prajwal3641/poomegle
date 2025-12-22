@@ -65,8 +65,8 @@ export const Landing = () => {
   // Static animation state
   const [showStatic, setShowStatic] = useState(true); // Start with static
 
-    // Live user count (fetch once on mount)
-    const [liveUsers, setLiveUsers] = useState<number>(0);
+  // Live user count (fetch once on mount)
+  const [liveUsers, setLiveUsers] = useState<number>(0);
 
   const getCam = async () => {
     // Request video and audio SEPARATELY so they're independent
@@ -93,7 +93,9 @@ export const Landing = () => {
     // 2. Try to get AUDIO (independently)
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+        },
       });
       const audioTrack = audioStream.getAudioTracks()[0];
       setLocalAudioTrack(audioTrack);
@@ -105,20 +107,21 @@ export const Landing = () => {
     setIsLoading(false);
   };
 
-    useEffect(() => {
-        // Fetch live user count once on mount
-        const fetchLiveUsers = async () => {
-            try {
-                const url = process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
-                const res = await fetch(`${url}/live-users`);
-                const data = await res.json();
-                setLiveUsers(data.count);
-            } catch (err) {
-                console.error("Failed to fetch live users:", err);
-            }
-        };
-        fetchLiveUsers();
-    }, []);
+  useEffect(() => {
+    // Fetch live user count once on mount
+    const fetchLiveUsers = async () => {
+      try {
+        const url =
+          process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
+        const res = await fetch(`${url}/live-users`);
+        const data = await res.json();
+        setLiveUsers(data.count);
+      } catch (err) {
+        console.error("Failed to fetch live users:", err);
+      }
+    };
+    fetchLiveUsers();
+  }, []);
 
   useEffect(() => {
     getCam();
@@ -274,7 +277,10 @@ export const Landing = () => {
                 className="bg-white dark:bg-dark-surface border-gray-300 dark:border-white/10 text-center text-base md:text-lg h-10 md:h-12 rounded-xl"
                 placeholder="Enter your name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 15) setName(e.target.value);
+                  else setName(e.target.value.slice(0, 15));
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
               />
             </div>
