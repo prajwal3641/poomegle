@@ -675,13 +675,13 @@ export const Room = ({
                 : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             }`}
           >
-            <SkipForward size={24} />
+            <SkipForward size={24} className="text-green-500" />
           </button>
           <button
             onClick={handleQuit}
             className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
           >
-            <StopSquare size={24} />
+            <StopSquare size={24} className="text-red-600" />
           </button>
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}

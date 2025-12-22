@@ -94,7 +94,8 @@ export const Landing = () => {
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          echoCancellation: true,
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
         },
       });
       const audioTrack = audioStream.getAudioTracks()[0];
