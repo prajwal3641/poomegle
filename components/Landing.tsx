@@ -108,14 +108,14 @@ export const Landing = () => {
 
       <Navbar liveUsers={liveUsers} />
 
-      <main className="flex-1 flex flex-col justify-center px-5 py-3 md:px-8 md:py-8 lg:px-12 pt-14 md:pt-20 relative z-10 overflow-hidden">
+      <main className="flex-1 flex flex-col justify-center px-4 py-2 md:px-8 md:py-8 lg:px-12 mt-14 sm:mt-16 md:mt-20 relative z-10 overflow-hidden">
         {/* Mobile: flex-col, Desktop: CSS Grid for equal height columns */}
-        <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[55fr_45fr] gap-3 md:gap-8 lg:gap-16 items-center">
+        <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[55fr_45fr] gap-2 sm:gap-3 md:gap-8 lg:gap-16 items-center">
           
           {/* Left Side: Camera Preview */}
           <div className="w-full sm:max-w-sm md:max-w-md lg:max-w-none mx-auto">
             {/* Video Container - vertical on mobile, landscape on desktop */}
-            <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] lg:aspect-auto lg:h-[420px] bg-gray-200 dark:bg-[#121215] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border border-gray-300 dark:border-white/10">
+            <div className="relative w-full aspect-[4/5] sm:aspect-[4/3] lg:aspect-auto lg:h-[420px] bg-gray-200 dark:bg-[#121215] rounded-xl sm:rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border border-gray-300 dark:border-white/10">
               {/* Name Label */}
               <div className="absolute top-3 left-3 md:top-4 md:left-4 text-gray-800 dark:text-gray-200 font-display text-sm md:text-lg z-10 tracking-wider bg-white/30 dark:bg-black/40 backdrop-blur-md px-3 py-0.5 md:px-4 md:py-1 rounded-full">
                 {name || "Your Name"}
@@ -194,17 +194,17 @@ export const Landing = () => {
             {/* Card wrapper - only styled on desktop, matches video height */}
             <div className="w-full lg:h-[420px] lg:bg-white/80 lg:dark:bg-dark-surface/90 lg:backdrop-blur-md lg:rounded-3xl lg:border lg:border-gray-200 lg:dark:border-white/10 px-0 lg:p-10 lg:shadow-xl flex flex-col justify-center">
               {/* Heading */}
-              <h1 className="text-3xl md:text-4xl font-display text-gray-900 dark:text-white tracking-wide leading-tight mb-1 md:mb-3 text-center lg:text-left">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display text-gray-900 dark:text-white tracking-wide leading-tight mb-0.5 sm:mb-1 md:mb-3 text-center lg:text-left">
                 Ready to join?
               </h1>
-              <p className="text-base md:text-base text-gray-600 dark:text-gray-400 mb-4 md:mb-6 text-center lg:text-left">
+              <p className="text-sm sm:text-base md:text-base text-gray-600 dark:text-gray-400 mb-2 sm:mb-4 md:mb-6 text-center lg:text-left">
                 Join a random video chat and start talking.
               </p>
 
               {/* Name Input */}
-              <div className="w-full mb-3 md:mb-4">
+              <div className="w-full mb-2 sm:mb-3 md:mb-4">
                 <Input
-                  className="bg-white dark:bg-dark-highlight border-gray-300 dark:border-white/10 text-center text-lg md:text-base h-12 md:h-12 rounded-xl w-full"
+                  className="bg-white dark:bg-dark-highlight border-gray-300 dark:border-white/10 text-center text-base sm:text-lg md:text-base h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl w-full"
                   placeholder="Enter your name"
                   value={name}
                   onChange={(e) => {
@@ -219,13 +219,13 @@ export const Landing = () => {
               <button
                 onClick={handleJoin}
                 disabled={!name.trim() || !!error}
-                className="bg-primary text-gray-900 font-mono text-lg md:text-base font-bold px-6 py-3 md:py-3 rounded-xl border-2 border-transparent hover:border-gray-900 shadow-[0_4px_15px_rgb(0,0,0,0.12)] hover:shadow-[0_6px_20px_rgb(255,200,200,0.4)] hover:-translate-y-1 transition-all duration-200 w-full active:scale-95 mb-3 md:mb-5 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                className="bg-primary text-gray-900 font-mono text-base sm:text-lg md:text-base font-bold px-5 py-2.5 sm:py-3 md:py-3 rounded-lg sm:rounded-xl border-2 border-transparent hover:border-gray-900 shadow-[0_4px_15px_rgb(0,0,0,0.12)] hover:shadow-[0_6px_20px_rgb(255,200,200,0.4)] hover:-translate-y-1 transition-all duration-200 w-full active:scale-95 mb-2 sm:mb-3 md:mb-5 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
               >
                 Hopp in
               </button>
 
               {/* Terms - always visible */}
-              <p className="text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
+              <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
                 By joining, you agree to our{" "}
                 <a href="#" className="underline hover:text-gray-700 dark:hover:text-gray-300">terms and community guidelines</a>.
               </p>
