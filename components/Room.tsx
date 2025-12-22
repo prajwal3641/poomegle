@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "./Navbar";
 import { useRouter } from "next/navigation";
+import { useMediaStream } from "@/hooks/useMediaStream";
 
 // Types
 interface Message {
@@ -58,16 +59,32 @@ async function getRtcConfig(): Promise<RTCConfiguration> {
   }
 }
 
-export const Room = ({
-  name,
-  localAudioTrack,
-  localVideoTrack,
-}: {
-  name: string;
-  localAudioTrack: MediaStreamTrack | null;
-  localVideoTrack: MediaStreamTrack | null;
-}) => {
+
+export const Room = () => {
   const router = useRouter();
+
+  // Get user name from session storage
+  const [name, setName] = useState("chutiya");
+  
+  useEffect(() => {
+    const storedName = sessionStorage.getItem("userName");
+    if (storedName) {
+      setName(storedName);
+    }
+  }, []);
+
+  // -- Use Custom Hook for Local Media --
+  const {
+    localAudioTrack,
+    localVideoTrack,
+    isLoading: isMediaLoading,
+    error: mediaError,
+    micOn,
+    setMicOn,
+    camOn,
+    setCamOn,
+  } = useMediaStream();
+
 
   // -- WebRTC Logic State --
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -99,23 +116,34 @@ export const Room = ({
 
   const [liveUsers, setLiveUsers] = useState(0);
 
+
   const localAudioTrackRef = useRef(localAudioTrack);
   const localVideoTrackRef = useRef(localVideoTrack);
 
-  const [strangerName, setStrangerName] = useState("Stranger");
-
-  localAudioTrackRef.current = localAudioTrack;
-  localVideoTrackRef.current = localVideoTrack;
-
-  const [isMuted, setIsMuted] = useState(false);
-
   useEffect(() => {
-    // Sync initial mute state
-    if (localAudioTrack) {
-      setIsMuted(!localAudioTrack.enabled);
-    }
+      localAudioTrackRef.current = localAudioTrack;
   }, [localAudioTrack]);
 
+  useEffect(() => {
+      localVideoTrackRef.current = localVideoTrack;
+  }, [localVideoTrack]);
+
+  const [strangerName, setStrangerName] = useState("Stranger");
+  
+  // Use state derived from hook or internal state for muting
+  // Since we have setMicOn from hook, we can use that to control mute state if we want two-way binding
+  // or keep local isMuted state. The hook manages track.enabled based on micOn.
+  // Let's use internal isMuted to toggle the hook's setMicOn
+  
+  const handleToggleMute = () => {
+    setMicOn(!micOn);
+  };
+  
+  const isMuted = !micOn;
+
+  // No longer need this useEffect to sync initial mute state as the hook handles it
+  // But we need to make sure track is enabled/disabled correctly in WebRTC
+  
   // --- WebRTC Logic Implementation ---
 
   function bindDataChannel(dc: RTCDataChannel) {
@@ -218,12 +246,6 @@ export const Room = ({
     }
   }
 
-  const handleToggleMute = () => {
-    if (localAudioTrackRef.current) {
-      localAudioTrackRef.current.enabled = !localAudioTrackRef.current.enabled;
-      setIsMuted(!localAudioTrackRef.current.enabled);
-    }
-  };
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -258,7 +280,7 @@ export const Room = ({
 
   const handleQuit = () => {
     socket?.disconnect();
-    window.location.reload();
+    router.push("/");
   };
 
   function resetConnection(type: "skip" | "quit" | "lobby") {

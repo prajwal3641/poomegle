@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, MicOff, Video, VideoOff, Settings } from "lucide-react";
+import { Mic, MicOff, VideoOff, Settings } from "lucide-react";
+import { useMediaStream } from "../hooks/useMediaStream";
 import { Navbar } from "./Navbar";
 import { PaperPlaneBackground } from "./PaperPlaneBackground";
-import { Room } from "./Room";
-import { Input } from "./ui/input"; // Using existing shadcn input
-import { Button } from "./ui/button"; // Using existing shadcn button (maybe, or use new design's button)
+import { Input } from "./ui/input";
+import { useRouter } from "next/navigation";
 
 const FUNNY_QUOTES = [
   "EMI bharni hai ya strangers se eye contact?",
@@ -45,69 +45,47 @@ const FILTERS = [
 ];
 
 export const Landing = () => {
-  // State from existing Landing
+  const router = useRouter();
   const [name, setName] = useState("");
-  const [joined, setJoined] = useState(false);
-  const [localAudioTrack, setLocalAudioTrack] =
-    useState<MediaStreamTrack | null>(null);
-  const [localVideoTrack, setLocalVideoTrack] =
-    useState<MediaStreamTrack | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // State from new Lobby
-  const [micOn, setMicOn] = useState(true); // Default true to match existing behavior (getCam gets both)
-  const [camOn, setCamOn] = useState(true); // Default true
+  const {
+    localAudioTrack,
+    localVideoTrack,
+    isLoading,
+    error,
+    micOn,
+    setMicOn,
+    camOn,
+    setCamOn,
+  } = useMediaStream();
+
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [filterIndex, setFilterIndex] = useState(0);
-
-  // Static animation state
-  const [showStatic, setShowStatic] = useState(true); // Start with static
-
-  // Live user count (fetch once on mount)
+  const [showStatic, setShowStatic] = useState(true);
   const [liveUsers, setLiveUsers] = useState<number>(0);
 
-  const getCam = async () => {
-    // Request video and audio SEPARATELY so they're independent
-    // If user denies/revokes mic, video still works!
+  useEffect(() => {
+    if (videoRef.current && localVideoTrack) {
+      videoRef.current.srcObject = new MediaStream([localVideoTrack]);
+    }
+  }, [localVideoTrack]);
 
-    // 1. Try to get VIDEO
-    try {
-      const videoStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-      });
-      const videoTrack = videoStream.getVideoTracks()[0];
-      setLocalVideoTrack(videoTrack);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = new MediaStream([videoTrack]);
+  useEffect(() => {
+    // Fetch live user count once on mount
+    const fetchLiveUsers = async () => {
+      try {
+        const url =
+          process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
+        const res = await fetch(`${url}/live-users`);
+        const data = await res.json();
+        setLiveUsers(data.count);
+      } catch (err) {
+        console.error("Failed to fetch live users:", err);
       }
-    } catch (err) {
-      console.error("Camera error:", err);
-      setError("Camera access denied");
-      setIsLoading(false);
-      return; // Can't continue without video
-    }
-
-    // 2. Try to get AUDIO (independently)
-    try {
-      const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: { ideal: true },
-          noiseSuppression: { ideal: true },
-        },
-      });
-      const audioTrack = audioStream.getAudioTracks()[0];
-      setLocalAudioTrack(audioTrack);
-    } catch (err) {
-      console.error("Mic error:", err);
-      // Video still works! Just no mic.
-    }
-
-    setIsLoading(false);
-  };
-
+    };
+    fetchLiveUsers();
+  }, []);
   useEffect(() => {
     // Fetch live user count once on mount
     const fetchLiveUsers = async () => {
@@ -125,8 +103,6 @@ export const Landing = () => {
   }, []);
 
   useEffect(() => {
-    getCam();
-
     // Initial static burst
     setTimeout(() => setShowStatic(false), 800);
 
@@ -143,16 +119,6 @@ export const Landing = () => {
   }, []);
 
   useEffect(() => {
-    // Update track enabled state when UI toggles change
-    if (localAudioTrack) {
-      localAudioTrack.enabled = micOn;
-    }
-    if (localVideoTrack) {
-      localVideoTrack.enabled = camOn;
-    }
-  }, [micOn, camOn, localAudioTrack, localVideoTrack]);
-
-  useEffect(() => {
     // Quote rotation
     const interval = setInterval(() => {
       setQuoteIndex((prev) => (prev + 1) % FUNNY_QUOTES.length);
@@ -162,7 +128,11 @@ export const Landing = () => {
 
   const handleJoin = () => {
     if (name.trim() && !error) {
-      setJoined(true);
+      // Store name in session storage to keep URL clean
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("userName", name.trim());
+      }
+      router.push("/room");
     }
   };
 
@@ -170,18 +140,9 @@ export const Landing = () => {
     setFilterIndex((prev) => (prev + 1) % FILTERS.length);
   };
 
-  if (joined) {
-    return (
-      <Room
-        name={name}
-        localAudioTrack={localAudioTrack}
-        localVideoTrack={localVideoTrack}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col relative overflow-y-auto overflow-x-hidden bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 font-mono">
+
       <PaperPlaneBackground />
       <Navbar liveUsers={liveUsers} />
 
