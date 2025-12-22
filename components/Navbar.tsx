@@ -16,22 +16,28 @@ export const Navbar: React.FC<{ liveUsers?: number }> = ({ liveUsers }) => {
   }, []);
 
   return (
-    <nav className="w-full p-2 md:p-4 flex justify-between items-center z-20 absolute top-0 left-0 bg-transparent pointer-events-none">
+    <nav className="w-full px-4 py-3 sm:px-5 sm:py-4 md:px-6 md:py-4 flex justify-between items-center z-20 absolute top-0 left-0 bg-transparent pointer-events-none">
+      {/* Logo */}
       <div
         onClick={() => router.push("/")}
-        className="pointer-events-auto text-xl md:text-3xl font-display tracking-wide transform -rotate-2 select-none cursor-pointer hover:rotate-0 transition-transform text-gray-900 dark:text-white"
+        className="pointer-events-auto text-2xl sm:text-[1.75rem] md:text-3xl font-display tracking-wide transform -rotate-2 select-none cursor-pointer hover:rotate-0 transition-transform text-gray-900 dark:text-white"
       >
         LOOP
       </div>
-      <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
+      
+      {/* Right side controls */}
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 pointer-events-auto">
+        {/* Users online badge */}
         <div
-          className={`flex items-center gap-2 bg-white/50 dark:bg-dark-highlight/50 backdrop-blur-sm px-2 py-1 md:px-3 md:py-1.5 rounded-full border border-gray-200 dark:border-white/5`}
+          className={`flex items-center gap-1.5 sm:gap-2 bg-white/50 dark:bg-dark-highlight/50 backdrop-blur-sm px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-full border border-gray-200 dark:border-white/5`}
         >
-          <div className="w-2 h-2 shrink-0 rounded-full bg-green-500 animate-pulse"></div>
-          <div className="text-gray-900 dark:text-gray-100 text-[10px] md:text-xs font-mono tracking-tight">
+          <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 shrink-0 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-gray-900 dark:text-gray-100 text-xs sm:text-sm md:text-sm font-mono tracking-tight whitespace-nowrap">
             {liveUsers ? liveUsers.toLocaleString() : 0} users online
-          </div>
+          </span>
         </div>
+        
+        {/* Theme toggle */}
         <ThemeToggle />
       </div>
     </nav>
