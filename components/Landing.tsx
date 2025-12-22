@@ -111,7 +111,6 @@ export const Landing = () => {
       <main className="flex-1 flex flex-col justify-center px-4 py-2 md:px-8 md:py-8 lg:px-12 mt-14 sm:mt-16 md:mt-20 relative z-10 overflow-hidden">
         {/* Mobile: flex-col, Desktop: CSS Grid for equal height columns */}
         <div className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-[55fr_45fr] gap-2 sm:gap-3 md:gap-8 lg:gap-16 items-center">
-          
           {/* Left Side: Camera Preview */}
           <div className="w-full sm:max-w-sm md:max-w-md lg:max-w-none mx-auto">
             {/* Video Container - vertical on mobile, landscape on desktop */}
@@ -147,7 +146,11 @@ export const Landing = () => {
               {/* Placeholder Icon if Cam Off */}
               {!camOn && (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
-                  <VideoOff size={40} className="md:w-14 md:h-14" strokeWidth={1} />
+                  <VideoOff
+                    size={40}
+                    className="md:w-14 md:h-14"
+                    strokeWidth={1}
+                  />
                 </div>
               )}
 
@@ -227,7 +230,13 @@ export const Landing = () => {
               {/* Terms - always visible */}
               <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
                 By joining, you agree to our{" "}
-                <a href="#" className="underline hover:text-gray-700 dark:hover:text-gray-300">terms and community guidelines</a>.
+                <a
+                  href="/guidelines"
+                  className="underline hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  terms and community guidelines
+                </a>
+                .
               </p>
 
               {/* Tip Box - Hidden on mobile, visible from md breakpoint */}
@@ -238,7 +247,6 @@ export const Landing = () => {
               </div>
             </div>
           </div>
-
         </div>
       </main>
     </div>
