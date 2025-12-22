@@ -2,7 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { VideoOff, UserX, X, MessageSquare, Mic, MicOff, SkipForward, Square as StopSquare, Send, Settings } from "lucide-react";
+import {
+  VideoOff,
+  UserX,
+  X,
+  MessageSquare,
+  Mic,
+  MicOff,
+  SkipForward,
+  Square as StopSquare,
+  Send,
+  Settings,
+} from "lucide-react";
 import { Navbar } from "./Navbar";
 import { useRouter } from "next/navigation";
 import { useMediaStream } from "@/hooks/useMediaStream";
@@ -275,6 +286,8 @@ export const Room = () => {
   function resetConnection(type: "skip" | "quit" | "lobby") {
     console.log("Resetting connection...");
 
+    setStrangerName("Stranger");
+
     // stop showing remote video
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     remoteStreamRef.current = null;
@@ -539,7 +552,9 @@ export const Room = () => {
               onClick={handleSkip}
               disabled={lobby}
               className={`absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 p-2 md:p-3 rounded-full hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center group/skip overflow-hidden ${
-                lobby ? "opacity-50 cursor-not-allowed" : "text-gray-900 dark:text-white"
+                lobby
+                  ? "opacity-50 cursor-not-allowed"
+                  : "text-gray-900 dark:text-white"
               }`}
               title="Skip"
             >
@@ -582,13 +597,13 @@ export const Room = () => {
             <div className="absolute top-2 left-3 md:top-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               You
             </div>
-            
+
             {/* Desktop Mic Toggle */}
             <button
               onClick={handleToggleMute}
               className={`absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border p-2 md:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center ${
-                isMuted 
-                  ? "border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 bg-red-100/80 dark:bg-red-900/40" 
+                isMuted
+                  ? "border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 bg-red-100/80 dark:bg-red-900/40"
                   : "border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               }`}
               title={isMuted ? "Unmute" : "Mute"}
@@ -662,44 +677,45 @@ export const Room = () => {
 
       {/* Mobile Dock Overlay */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 md:hidden w-full px-4 flex justify-center pointer-events-none">
-         <div className="flex items-center gap-5 px-6 py-2.5 bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-full border border-white/20 shadow-xl pointer-events-auto scale-95">
-            <button
-              onClick={handleToggleMute}
-              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all ${
-                isMuted ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-              }`}
-            >
-              {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-            </button>
-            <button
-              onClick={handleSkip}
-              disabled={lobby}
-              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
-                lobby ? "opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-600" : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-              }`}
-            >
-              <SkipForward size={24} />
-            </button>
-            <button
-              onClick={handleQuit}
-              className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
-            >
-              <StopSquare size={24} />
-            </button>
-            <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              disabled={lobby}
-              className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
-                lobby 
-                  ? "opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-600" 
-                  : isChatOpen 
-                    ? "bg-gray-100 dark:bg-white/10 text-primary" 
-                    : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-              }`}
-            >
-              <MessageSquare size={24} />
-            </button>
-         </div>
+        <div className="flex items-center gap-5 px-6 py-2.5 bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-full border border-white/20 shadow-xl pointer-events-auto scale-95">
+          <button
+            onClick={handleToggleMute}
+            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all ${
+              isMuted
+                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            }`}
+          >
+            {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+          </button>
+          <button
+            onClick={handleSkip}
+            disabled={lobby}
+            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
+              lobby
+                ? "opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-600"
+                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            }`}
+          >
+            <SkipForward size={24} className="text-green-500" />
+          </button>
+          <button
+            onClick={handleQuit}
+            className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+          >
+            <StopSquare size={24} className="text-red-600" />
+          </button>
+          <button
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
+              isChatOpen
+                ? "bg-gray-100 dark:bg-white/10 text-primary"
+                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            }`}
+          >
+            <MessageSquare size={24} />
+          </button>
+        </div>
       </div>
 
       {/* Floating Open Chat Button (only when chat is closed) - Hidden on Desktop and Mobile */}

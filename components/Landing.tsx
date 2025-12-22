@@ -86,6 +86,21 @@ export const Landing = () => {
     };
     fetchLiveUsers();
   }, []);
+  useEffect(() => {
+    // Fetch live user count once on mount
+    const fetchLiveUsers = async () => {
+      try {
+        const url =
+          process.env.NEXT_PUBLIC_WS_URL || "https://poomegle.onrender.com";
+        const res = await fetch(`${url}/live-users`);
+        const data = await res.json();
+        setLiveUsers(data.count);
+      } catch (err) {
+        console.error("Failed to fetch live users:", err);
+      }
+    };
+    fetchLiveUsers();
+  }, []);
 
   useEffect(() => {
     // Initial static burst
@@ -224,7 +239,10 @@ export const Landing = () => {
                 className="bg-white dark:bg-dark-surface border-gray-300 dark:border-white/10 text-center text-base md:text-lg h-10 md:h-12 rounded-xl"
                 placeholder="Enter your name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 15) setName(e.target.value);
+                  else setName(e.target.value.slice(0, 15));
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
               />
             </div>

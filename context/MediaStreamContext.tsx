@@ -57,7 +57,10 @@ export const MediaStreamProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // 2. Try to get AUDIO (independently)
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
       });
       const audioTrack = audioStream.getAudioTracks()[0];
       setLocalAudioTrack(audioTrack);
