@@ -29,12 +29,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Cloudflare Web Analytics */}
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "5a899ca15ead4a5b8a6ec06fa0694624","spa": true}'
+        ></script>
+        {/* End Cloudflare Web Analytics */}
+      </head>
       <body
         className={`${gochiHand.variable} ${spaceMono.variable} antialiased bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 font-mono overflow-hidden`}
       >
-        <MediaStreamProvider>
-          {children}
-        </MediaStreamProvider>
+        <MediaStreamProvider>{children}</MediaStreamProvider>
       </body>
     </html>
   );
