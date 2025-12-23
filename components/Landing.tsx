@@ -170,21 +170,21 @@ export const Landing = () => {
               <div className="absolute bottom-3 md:bottom-4 left-0 right-0 flex justify-center items-center gap-3 md:gap-4 z-20">
                 <button
                   onClick={() => setMicOn(!micOn)}
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-lg ${
+                  className={`w-12 h-12 md:w-12 md:h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md ${
                     micOn ? "bg-primary" : "bg-red-200 dark:bg-red-400/80"
                   }`}
                 >
                   {micOn ? (
-                    <Mic className="text-gray-900 w-4 h-4 md:w-5 md:h-5" />
+                    <Mic className="text-gray-900 w-5 h-5 md:w-5 md:h-5" />
                   ) : (
-                    <MicOff className="text-gray-900 w-4 h-4 md:w-5 md:h-5" />
+                    <MicOff className="text-gray-900 w-5 h-5 md:w-5 md:h-5" />
                   )}
                 </button>
                 <button
                   onClick={toggleFilter}
-                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-lg cursor-pointer"
+                  className="w-12 h-12 md:w-12 md:h-12 rounded-full bg-primary border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md cursor-pointer"
                 >
-                  <Settings className="text-gray-900 w-4 h-4 md:w-5 md:h-5" />
+                  <Settings className="text-gray-900 w-5 h-5 md:w-5 md:h-5" />
                 </button>
               </div>
             </div>
@@ -207,7 +207,7 @@ export const Landing = () => {
               {/* Name Input */}
               <div className="w-full mb-2 sm:mb-3 md:mb-4">
                 <Input
-                  className="bg-white dark:bg-dark-highlight border-gray-300 dark:border-white/10 text-center text-base sm:text-lg md:text-base h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl w-full"
+                  className="bg-white dark:bg-dark-highlight border-gray-300 dark:border-white/10 text-center text-base sm:text-lg md:text-base h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl w-full focus:ring-0 focus:ring-offset-0 focus:border-gray-400 dark:focus:border-white/20 shadow-none focus:shadow-none"
                   placeholder="Enter your name"
                   value={name}
                   onChange={(e) => {
