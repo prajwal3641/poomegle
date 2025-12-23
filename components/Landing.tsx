@@ -204,10 +204,10 @@ export const Landing = () => {
             {/* Card wrapper - only styled on desktop, matches video height */}
             <div className="w-full lg:h-[420px] lg:bg-white/80 lg:dark:bg-dark-surface/90 lg:backdrop-blur-md lg:rounded-3xl lg:border lg:border-gray-200 lg:dark:border-white/10 px-0 lg:p-10 lg:shadow-xl flex flex-col justify-center">
               {/* Heading */}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display text-gray-900 dark:text-white tracking-wide leading-tight mb-0.5 sm:mb-1 md:mb-3 text-center lg:text-left">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display text-gray-900 dark:text-white tracking-wide leading-tight mb-3 sm:mb-1 md:mb-3 text-center lg:text-left">
                 Ready to join?
               </h1>
-              <p className="text-xs sm:text-base md:text-base text-gray-600 dark:text-gray-400 mb-2 sm:mb-4 md:mb-6 text-center lg:text-left">
+              <p className="text-xs sm:text-base md:text-base text-gray-600 dark:text-gray-400 mb-6 sm:mb-4 md:mb-6 text-center lg:text-left">
                 Join a random video chat and start talking.
               </p>
 
