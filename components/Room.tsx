@@ -80,6 +80,7 @@ export const Room = () => {
     setMicOn,
     camOn,
     setCamOn,
+    videoFilter,
   } = useMediaStream();
 
   // -- WebRTC Logic State --
@@ -545,19 +546,14 @@ export const Room = () => {
             <button
               onClick={handleSkip}
               disabled={lobby}
-              className={`absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 p-2 md:p-3 rounded-full hover:bg-green-500 hover:text-white hover:border-green-500 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center group/skip overflow-hidden ${
+              className={`absolute top-4 right-4 w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md z-20 cursor-pointer hidden md:flex ${
                 lobby
-                  ? "opacity-50 cursor-not-allowed"
-                  : "text-gray-900 dark:text-white"
+                  ? "bg-primary/50 cursor-not-allowed"
+                  : "bg-primary"
               }`}
               title="Skip"
             >
-              <div className="flex items-center gap-2 group-hover/skip:w-auto">
-                <SkipForward size={20} className="shrink-0" />
-                <span className="max-w-0 overflow-hidden group-hover/skip:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-bold">
-                  Skip
-                </span>
-              </div>
+              <SkipForward size={20} className="text-gray-900" />
             </button>
             <div className="absolute top-2 left-3 md:top-4 md:left-5 text-black-400 dark:text-black-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               {strangerName}
@@ -571,6 +567,7 @@ export const Room = () => {
               playsInline
               muted
               ref={localVideoRef}
+              style={{ filter: videoFilter }}
               className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]"
             />
 
@@ -578,15 +575,10 @@ export const Room = () => {
 
             <button
               onClick={handleQuit}
-              className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border border-gray-200 dark:border-white/10 p-2 md:p-3 rounded-full hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center group/quit text-gray-900 dark:text-white overflow-hidden"
+              className="absolute top-4 right-4 w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md bg-red-400 z-20 cursor-pointer hidden md:flex"
               title="Quit"
             >
-              <div className="flex items-center gap-2 group-hover/quit:w-auto">
-                <StopSquare size={20} className="shrink-0" />
-                <span className="max-w-0 overflow-hidden group-hover/quit:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap text-sm font-bold">
-                  Quit
-                </span>
-              </div>
+              <X size={20} className="text-gray-900" />
             </button>
             <div className="absolute top-2 left-3 md:top-4 md:left-5 text-gray-400 dark:text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-50 z-20">
               You
@@ -595,14 +587,16 @@ export const Room = () => {
             {/* Desktop Mic Toggle */}
             <button
               onClick={handleToggleMute}
-              className={`absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-white/80 dark:bg-black/40 backdrop-blur-md border p-2 md:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-white dark:hover:text-black transition-all duration-200 shadow-sm z-20 cursor-pointer hidden md:flex items-center justify-center ${
-                isMuted
-                  ? "border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 bg-red-100/80 dark:bg-red-900/40"
-                  : "border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+              className={`absolute bottom-4 right-4 w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md z-20 cursor-pointer hidden md:flex ${
+                micOn ? "bg-primary" : "bg-red-400"
               }`}
               title={isMuted ? "Unmute" : "Mute"}
             >
-              {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+              {micOn ? (
+                <Mic size={20} className="text-gray-900" />
+              ) : (
+                <MicOff size={20} className="text-gray-900" />
+              )}
             </button>
           </div>
         </div>
@@ -671,43 +665,41 @@ export const Room = () => {
 
       {/* Mobile Dock Overlay */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 md:hidden w-full px-4 flex justify-center pointer-events-none">
-        <div className="flex items-center gap-5 px-6 py-2.5 bg-white/20 dark:bg-black/20 backdrop-blur-xl rounded-full border border-white/20 shadow-xl pointer-events-auto scale-95">
+        <div className="flex items-center gap-4 px-6 py-2 bg-transparent pointer-events-auto scale-90 sm:scale-100">
           <button
             onClick={handleToggleMute}
-            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all ${
-              isMuted
-                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            className={`w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md ${
+              micOn ? "bg-primary" : "bg-red-400"
             }`}
           >
-            {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+            {micOn ? (
+              <Mic size={20} className="text-gray-900" />
+            ) : (
+              <MicOff size={20} className="text-gray-900" />
+            )}
           </button>
           <button
             onClick={handleSkip}
             disabled={lobby}
-            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
-              lobby
-                ? "opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-600"
-                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            className={`w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md bg-primary ${
+              lobby ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            <SkipForward size={24} className="text-green-500" />
+            <SkipForward size={20} className="text-gray-900" />
           </button>
           <button
             onClick={handleQuit}
-            className="p-2 rounded-full border border-gray-200 dark:border-white/20 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-95"
+            className="w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md bg-red-400"
           >
-            <StopSquare size={24} className="text-red-600" />
+            <X size={20} className="text-gray-900" />
           </button>
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`p-2 rounded-full border border-gray-200 dark:border-white/20 transition-all active:scale-95 ${
-              isChatOpen
-                ? "bg-gray-100 dark:bg-white/10 text-primary"
-                : "text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            className={`w-12 h-12 rounded-full border-2 border-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow-md ${
+              isChatOpen ? "bg-white" : "bg-primary"
             }`}
           >
-            <MessageSquare size={24} />
+            <MessageSquare size={20} className="text-gray-900" />
           </button>
         </div>
       </div>

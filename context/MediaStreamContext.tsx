@@ -11,6 +11,8 @@ interface MediaStreamContextType {
   setMicOn: (value: boolean) => void;
   camOn: boolean;
   setCamOn: (value: boolean) => void;
+  videoFilter: string;
+  setVideoFilter: (value: string) => void;
   initializeMedia: () => Promise<void>;
   stopAllTracks: () => void;
 }
@@ -24,6 +26,7 @@ export const MediaStreamProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [error, setError] = useState<string | null>(null);
   const [micOn, setMicOnState] = useState(true);
   const [camOn, setCamOnState] = useState(true);
+  const [videoFilter, setVideoFilter] = useState("none");
   
   // Track if media has been initialized to prevent duplicate requests
   const isInitialized = useRef(false);
@@ -139,6 +142,8 @@ export const MediaStreamProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setMicOn,
         camOn,
         setCamOn,
+        videoFilter,
+        setVideoFilter,
         initializeMedia,
         stopAllTracks,
       }}

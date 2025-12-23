@@ -8,14 +8,18 @@ import { Input } from "./ui/input";
 import { useRouter } from "next/navigation";
 
 const FUNNY_QUOTES = [
-  "Network slow hai ya confidence? 💀 Chill kar, tu bas relax ho!",
-  "Mummy ko bolna padhai kar raha hu 🤫",
-  "Camera on karle bhai, sharma mat. First impression is last!",
+  "Sach bol, ladki dhundne aaya hai na?",
+  "Filter laga le bhai, shayad kuch baat ban jaye! 🌚",
+  "Padh le bhai, yaha 'Hi' bolne se ghar nahi chalta! 📚",
+  "Single mar jayega agar aise hi skip karta raha toh! 💔",
+  "Camera on karle bhai, sharma mat",
   "Engineering li thi, ab yaha hu 🤡",
-  "Mic on kar, sanata kyu hai bhai? 🎤 Awaaz nikal!",
-  "Padhai likhai karo, IAS YAS bano... 📚",
-  "Bas 5 min aur, phir pakka assignment 😴",
-  "Chai peene chaloge? ☕ Virtual chai works too!",
+  "Looking for love? Wrong app bhai.",
+  "sach bol Aaj nahaya nahi na? 🚿",
+  "Padhai likhai toh hoti rahegi... 📚",
+  "Berozgaari chupaane ka ninja technique 🥷",
+  "Yaha bhi 'Skip' hi hone wala hai, aadat daal le ⏭️",
+  "Saans lele bhai, itna desperate mat dikh 😮‍💨",
 ];
 
 const FILTERS = [
@@ -41,10 +45,11 @@ export const Landing = () => {
     setMicOn,
     camOn,
     setCamOn,
+    videoFilter,
+    setVideoFilter,
   } = useMediaStream();
 
   const [quoteIndex, setQuoteIndex] = useState(0);
-  const [filterIndex, setFilterIndex] = useState(0);
   const [showStatic, setShowStatic] = useState(true);
   const [liveUsers, setLiveUsers] = useState<number>(0);
 
@@ -99,7 +104,9 @@ export const Landing = () => {
   };
 
   const toggleFilter = () => {
-    setFilterIndex((prev) => (prev + 1) % FILTERS.length);
+    const currentIndex = FILTERS.indexOf(videoFilter);
+    const nextIndex = (currentIndex + 1) % FILTERS.length;
+    setVideoFilter(FILTERS[nextIndex]);
   };
 
   return (
@@ -129,7 +136,7 @@ export const Landing = () => {
                 autoPlay
                 muted
                 playsInline
-                style={{ filter: FILTERS[filterIndex] }}
+                style={{ filter: videoFilter }}
                 className={`absolute inset-0 w-full h-full object-cover transform scale-x-[-1] transition-all duration-300 ${
                   camOn ? "opacity-100" : "opacity-0"
                 }`}
@@ -200,7 +207,7 @@ export const Landing = () => {
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-display text-gray-900 dark:text-white tracking-wide leading-tight mb-0.5 sm:mb-1 md:mb-3 text-center lg:text-left">
                 Ready to join?
               </h1>
-              <p className="text-sm sm:text-base md:text-base text-gray-600 dark:text-gray-400 mb-2 sm:mb-4 md:mb-6 text-center lg:text-left">
+              <p className="text-xs sm:text-base md:text-base text-gray-600 dark:text-gray-400 mb-2 sm:mb-4 md:mb-6 text-center lg:text-left">
                 Join a random video chat and start talking.
               </p>
 
@@ -228,7 +235,7 @@ export const Landing = () => {
               </button>
 
               {/* Terms - always visible */}
-              <p className="text-xs sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
+              <p className="text-[10px] sm:text-sm md:text-sm text-gray-500 dark:text-gray-400 text-center lg:text-left">
                 By joining, you agree to our{" "}
                 <a
                   href="/guidelines"
@@ -240,8 +247,8 @@ export const Landing = () => {
               </p>
 
               {/* Tip Box - Hidden on mobile, visible from md breakpoint */}
-              <div className="hidden md:flex mt-auto bg-gray-100 dark:bg-dark-highlight/80 rounded-xl md:rounded-2xl px-4 md:px-5 border border-gray-200 dark:border-white/5 h-[76px] md:h-[80px] items-center justify-center lg:justify-start text-center lg:text-left overflow-hidden flex-shrink-0 md:mt-6">
-                <p className="text-sm md:text-sm text-gray-600 dark:text-gray-300 font-medium leading-snug line-clamp-2">
+              <div className="hidden md:flex mt-auto bg-primary/80 rounded-2xl rounded-bl-none px-4 h-20 border border-black items-center justify-center text-center overflow-hidden flex-shrink-0 md:mt-6 shadow-sm transform transition-all hover:scale-[1.02]">
+                <p className="text-sm md:text-base text-black font-medium leading-snug font-mono line-clamp-2">
                   {FUNNY_QUOTES[quoteIndex]}
                 </p>
               </div>

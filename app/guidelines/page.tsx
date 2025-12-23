@@ -17,9 +17,10 @@ const Guidelines = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] font-mono text-gray-300 p-6 flex items-center justify-center">
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        {/* Left Side: Visual Vibe */}
+    <div className="fixed inset-0 overflow-y-auto bg-[#0d0d0d] font-mono text-gray-300">
+      <div className="min-h-full flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          {/* Left Side: Visual Vibe */}
         <div className="space-y-6">
           <div className="relative group overflow-hidden rounded-[2.5rem]">
             {/* The 'pointer-events-none' div sits on top of the GIF.
@@ -89,6 +90,7 @@ const Guidelines = () => {
           <p className="text-center text-[9px] text-gray-600 uppercase tracking-widest mt-4">
             (Disclaimer: Kaleen Bhaiya is watching, probably.)
           </p>
+        </div>
         </div>
       </div>
     </div>

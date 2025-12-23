@@ -20,6 +20,8 @@ export const useMediaStream = () => {
     setMicOn,
     camOn,
     setCamOn,
+    videoFilter,
+    setVideoFilter,
     initializeMedia,
     stopAllTracks,
   } = useMediaStreamContext();
@@ -38,6 +40,8 @@ export const useMediaStream = () => {
     setMicOn,
     camOn,
     setCamOn,
+    videoFilter,
+    setVideoFilter,
     // Expose these for advanced use cases
     initializeMedia,
     stopAllTracks,
