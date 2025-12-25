@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-icons": "node scripts/generate-icons-svg.js",
+    "generate-icons-simple": "node scripts/generate-icons-simple.js",
+    "generate-icons-canvas": "node scripts/generate-icons.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@vercel/og": "^0.6.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.561.0",

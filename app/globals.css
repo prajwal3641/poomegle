@@ -107,3 +107,42 @@
   background-size: 200px 200px;
   filter: contrast(150%) grayscale(100%);
 }
+
+/* ============================================
+   CUSTOM SCROLLBAR - Minimal Theme
+   ============================================ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Hide scrollbar when not scrolling (optional smooth feel) */
+::-webkit-scrollbar-thumb:active {
+  background: #FFC8C8;
+}
+
+/* Corner piece */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

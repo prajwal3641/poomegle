@@ -21,7 +21,6 @@
 /build
 
 # misc
-.DS_Store
 *.pem
 
 # debug
@@ -39,3 +38,37 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SEO setup guides and documentation (temporary files)
+SETUP_INSTRUCTIONS.md
+VERIFICATION_CODES_GUIDE.md
+QUICK_VERIFICATION_GUIDE.md
+README_SEO_SETUP.md
+REMAINING_TASKS.md
+SEO_IMPLEMENTATION_COMPLETE.md
+SEO_PERFORMANCE_ANALYSIS.md
+SEO_STRATEGY_AUDIT.md
+NLP_ENTITIES_AUDIT.md
+NLP_ENTITIES_COMPLETE.md
+public/ICON_GUIDE.md
+
+# Scripts folder (icon generation tools)
+/scripts/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

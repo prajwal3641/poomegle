@@ -3,8 +3,9 @@
 import React, { useEffect } from "react";
 import { Coffee, ShieldAlert, UserCheck, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BRAND } from "@/lib/seo";
 
-const Guidelines = () => {
+const GuidelinesContent = () => {
   const router = useRouter();
   useEffect(() => {
     const script = document.createElement("script");
@@ -32,11 +33,10 @@ const Guidelines = () => {
               <div
                 className="tenor-gif-embed"
                 data-postid="18701848"
-                data-share-method="none" // Changed to 'none' to reduce external links
+                data-share-method="none"
                 data-aspect-ratio="1.33333"
                 data-width="100%"
               >
-                {/* Hidden links for SEO/Script requirements, but effectively invisible */}
                 <a
                   className="hidden"
                   href="https://tenor.com/view/mirjapur-attitude-gif-18701848"
@@ -52,7 +52,7 @@ const Guidelines = () => {
               THE <span className="text-[#a38b8b]">UNSPOKEN</span> RULES
             </h1>
             <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-              We’re here to chill, not to witness your audition for a villain
+              We&apos;re here to chill, not to witness your audition for a villain
               role. Keep the vibe steady.
             </p>
           </div>
@@ -77,19 +77,32 @@ const Guidelines = () => {
             text="One bad joke is fine. Constant toxicity will get you deleted."
           />
 
-          {/* Action Button matching "HOPP IN" style from your image */}
+          {/* Action Button */}
           <button
             onClick={() => {
               router.push("/");
             }}
             className="w-full mt-6 py-4 bg-[#a38b8b] hover:bg-[#b8a1a1] text-[#0d0d0d] rounded-2xl font-black text-xs tracking-[0.2em] uppercase transition-all active:scale-95 shadow-lg shadow-black/40"
           >
-            I'll Behave, Mostly
+            I&apos;ll Behave, Mostly
           </button>
 
           <p className="text-center text-[9px] text-gray-600 uppercase tracking-widest mt-4">
             (Disclaimer: Kaleen Bhaiya is watching, probably.)
           </p>
+
+          {/* Age Restrictions & Safety Notice */}
+          <div className="mt-6 p-4 bg-primary/20 border border-primary/50 rounded-2xl">
+            <p className="text-xs font-bold text-white mb-2 uppercase tracking-wider">
+              Age Restrictions & Safety
+            </p>
+            <p className="text-[10px] text-gray-300 leading-relaxed">
+              {BRAND.name} is intended for users <strong>18 years and older</strong>. We use NSFW filtering technology 
+              and content moderation, but random video chat platforms may still expose users to inappropriate content. 
+              Parental guidance is strongly recommended for younger users. Use block and report features immediately 
+              if you encounter inappropriate content.
+            </p>
+          </div>
         </div>
         </div>
       </div>
@@ -108,4 +121,5 @@ const Rule = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
   </div>
 );
 
-export default Guidelines;
+export default GuidelinesContent;
+
