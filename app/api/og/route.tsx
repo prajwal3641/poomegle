@@ -17,7 +17,8 @@ import { NextRequest } from "next/server";
 // Dynamic import to handle cases where @vercel/og might not be installed
 // Install with: npm install @vercel/og
 
-export const runtime = "edge";
+// Note: Removed edge runtime to allow static generation where possible
+// API routes are always dynamic, but this removes the warning
 
 // Type declaration for when @vercel/og is not installed
 type ImageResponseType = new (

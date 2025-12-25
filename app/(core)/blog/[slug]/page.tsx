@@ -97,34 +97,56 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </nav>
 
       {/* Article */}
-      <article className="px-6 py-12 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-xs text-primary uppercase tracking-wider">{post.tag}</span>
+      <article className="px-6 py-12 max-w-3xl mx-auto">
+        {/* Featured Image */}
+        {post.image && (
+          <div className="mb-8 rounded-xl overflow-hidden border border-white/10">
+            <img 
+              src={post.image} 
+              alt={post.title}
+              className="w-full h-auto"
+              loading="eager"
+            />
+          </div>
+        )}
+        
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-xs text-primary uppercase tracking-wider font-bold">{post.tag}</span>
           <span className="text-xs text-gray-600">•</span>
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-500">
             {new Date(post.date).toLocaleDateString("en-US", { 
-              month: "short", 
+              month: "long", 
               day: "numeric", 
               year: "numeric" 
             })}
           </span>
         </div>
-        <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
-        <p className="text-gray-400 mb-10">{post.description}</p>
         
+        <h1 className="text-4xl md:text-5xl font-display font-bold mb-6 leading-tight">{post.title}</h1>
+        <p className="text-lg text-gray-400 mb-12 leading-relaxed">{post.description}</p>
+        
+        {/* Article Content */}
         <div 
-          className="prose prose-invert prose-sm max-w-none
-            prose-headings:font-bold prose-headings:text-white
-            prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4
-            prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-            prose-p:text-gray-400 prose-p:leading-relaxed
-            prose-li:text-gray-400
-            prose-strong:text-white
-            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-            prose-code:text-primary prose-code:bg-white/5 prose-code:px-1 prose-code:rounded
-            prose-table:text-sm
-            prose-th:text-left prose-th:p-2 prose-th:border-b prose-th:border-white/10
-            prose-td:p-2 prose-td:border-b prose-td:border-white/5"
+          className="blog-content
+            [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-white [&_h1]:mt-12 [&_h1]:mb-6
+            [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-10 [&_h2]:mb-5
+            [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-8 [&_h3]:mb-4
+            [&_h4]:text-lg [&_h4]:font-bold [&_h4]:text-white [&_h4]:mt-6 [&_h4]:mb-3
+            [&_p]:text-gray-400 [&_p]:leading-relaxed [&_p]:mb-4 [&_p]:text-base
+            [&_strong]:text-white [&_strong]:font-bold
+            [&_em]:text-gray-300 [&_em]:italic
+            [&_a]:text-primary [&_a]:hover:underline [&_a]:transition-colors
+            [&_code]:bg-white/10 [&_code]:text-primary [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
+            [&_pre]:bg-[#1a1a1a] [&_pre]:border [&_pre]:border-white/10 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-6
+            [&_pre_code]:bg-transparent [&_pre_code]:text-gray-300 [&_pre_code]:p-0
+            [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:my-4 [&_ul]:ml-6
+            [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:my-4 [&_ol]:ml-6
+            [&_li]:text-gray-400 [&_li]:mb-2
+            [&_blockquote]:border-l-4 [&_blockquote]:border-primary/50 [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:bg-white/5 [&_blockquote]:rounded-r-lg [&_blockquote]:italic [&_blockquote]:text-gray-300
+            [&_hr]:my-8 [&_hr]:border-white/10
+            [&_figure]:my-8 [&_figure]:rounded-xl [&_figure]:overflow-hidden [&_figure]:border [&_figure]:border-white/10
+            [&_img]:w-full [&_img]:h-auto
+            [&_figcaption]:text-xs [&_figcaption]:text-gray-500 [&_figcaption]:mt-2 [&_figcaption]:px-4 [&_figcaption]:text-center"
           dangerouslySetInnerHTML={{ __html: parseContent(post.content) }}
         />
       </article>

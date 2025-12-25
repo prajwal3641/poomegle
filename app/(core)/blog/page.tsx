@@ -8,6 +8,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { BRAND, blogMetadata } from "@/lib/seo";
 import { getAllPosts } from "@/lib/blog";
+import { BreadcrumbJsonLd } from "@/lib/seo/structured-data";
 import { Footer } from "@/components/Footer";
 import { ArrowRight } from "lucide-react";
 
@@ -19,9 +20,18 @@ export const metadata: Metadata = blogMetadata;
 
 export default function BlogPage() {
   const posts = getAllPosts();
+  const pageUrl = `${BRAND.url}/blog`;
 
   return (
     <div className="fixed inset-0 bg-[#0c0c0c] text-gray-100 font-mono overflow-y-auto">
+      {/* Breadcrumb Structured Data */}
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: BRAND.url },
+          { name: "Blog", url: pageUrl },
+        ]}
+      />
+      
       {/* Nav */}
       <nav className="px-6 py-5 flex items-center justify-between border-b border-white/5">
         <Link href="/" className="text-2xl font-display tracking-wide -rotate-2 hover:rotate-0 transition-transform">

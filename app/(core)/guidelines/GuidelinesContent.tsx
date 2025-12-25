@@ -18,8 +18,7 @@ const GuidelinesContent = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-y-auto bg-[#0d0d0d] font-mono text-gray-300">
-      <div className="min-h-full flex items-center justify-center p-6">
+    <div className="min-h-full flex items-center justify-center p-6">
         <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left Side: Visual Vibe */}
         <div className="space-y-6">
@@ -106,7 +105,6 @@ const GuidelinesContent = () => {
         </div>
         </div>
       </div>
-    </div>
   );
 };
 
